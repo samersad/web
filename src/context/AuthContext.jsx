@@ -7,7 +7,7 @@ const previewUser = {
   fullName: 'Romany Khairi',
   email: 'romany@example.com',
   phone: '01000000000',
-  role: 'student',
+  role: 'owner',
   gender: 'male',
   faculty: 'Computer Science',
   preferredLanguage: 'en',
