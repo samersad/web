@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +43,14 @@ export const Navbar = () => {
             >
               <i className="fas fa-envelope mr-2"></i>Messages
             </Link>
+            {user?.role === 'owner' && (
+              <Link
+                to="/add-apartment"
+                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition"
+              >
+                <i className="fas fa-plus mr-2"></i>Add Apartment
+              </Link>
+            )}
           </div>
 
           {/* Right Section */}
@@ -79,22 +88,16 @@ export const Navbar = () => {
                       >
                         <i className="fas fa-calendar-check mr-2"></i>Booking Requests
                       </Link>
-                      <Link
-                        to="/add-apartment"
-                        className="block px-4 py-2 text-gray-700 hover:bg-light transition"
-                        onClick={() => setProfileMenuOpen(false)}
-                      >
-                        <i className="fas fa-plus mr-2"></i>Add Apartment
-                      </Link>
                     </>
                   )}
                   {user?.role === 'student' && (
                     <Link
-                      to="/search"
+                      to="/my-bookings"
                       className="block px-4 py-2 text-gray-700 hover:bg-light transition"
                       onClick={() => setProfileMenuOpen(false)}
                     >
-                      <i className="fas fa-search mr-2"></i>Search Apartments
+                      <i className="fas fa-calendar-check mr-2"></i>
+                      My Bookings
                     </Link>
                   )}
                   <Link

@@ -181,20 +181,15 @@ export const ApartmentDetails = () => {
               </div>
             </div>
             <div className="flex gap-4">
-              <a
-                href={`tel:${apartment.owner.phone}`}
-                className="w-12 h-12 rounded-full border border-blue-100 bg-white flex items-center justify-center text-blue-500 hover:bg-blue-50 transition shadow-sm text-lg"
-                title="Call Owner"
-              >
-                <i className="fas fa-phone-alt"></i>
-              </a>
+              {user?.role === 'student' && (
               <button
-                onClick={() => alert(`Starting a messaging thread with ${apartment.owner.fullName}...`)}
+                onClick={() => navigate(`/messages/${apartment.owner._id}`)}
                 className="w-12 h-12 rounded-full border border-blue-100 bg-white flex items-center justify-center text-blue-500 hover:bg-blue-50 transition shadow-sm text-lg"
                 title="Message Owner"
               >
                 <i className="far fa-comment-dots"></i>
               </button>
+            )}
             </div>
           </div>
         )}
@@ -233,6 +228,8 @@ export const ApartmentDetails = () => {
 
         {/* CTA Buttons */}
         <div className="flex justify-center max-w-md mx-auto my-12">
+          
+          {/* Student only */}
           {user?.role === 'student' && (
             <button
               onClick={() => setIsBookingModalOpen(true)}
@@ -242,21 +239,22 @@ export const ApartmentDetails = () => {
             </button>
           )}
 
-          {user?.role === 'owner' && user?._id === apartment.owner?._id && (
-            <button
-              onClick={() => navigate(`/edit-apartment/${id}`)}
-              className="w-full py-4 text-center rounded-2xl bg-[#3f72af] hover:bg-[#112d4e] text-white font-bold shadow-md transition text-lg"
-            >
-              Edit Apartment
-            </button>
-          )}
-
+          {/* Login */}
           {!user && (
             <button
               onClick={() => navigate('/login')}
               className="w-full py-4 text-center rounded-2xl bg-[#3f72af] hover:bg-[#112d4e] text-white font-bold shadow-md transition text-lg"
             >
               Login to Rent
+            </button>
+          )}
+
+          {user?.role === 'owner' && user?._id === apartment.owner?._id && (
+            <button
+              onClick={() => navigate(`/edit-apartment/${id}`)}
+              className="w-full py-4 text-center rounded-2xl bg-[#3f72af] hover:bg-[#112d4e] text-white font-bold shadow-md transition text-lg"
+            >
+              Edit Apartment
             </button>
           )}
         </div>

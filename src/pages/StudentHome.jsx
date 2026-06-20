@@ -119,8 +119,8 @@ export const StudentHome = () => {
             { name: 'Downtown', image: 'https://via.placeholder.com/300x200' },
             { name: 'North Assuit', image: 'https://via.placeholder.com/300x200' },
             { name: 'South Assuit', image: 'https://via.placeholder.com/300x200' },
-            { name: 'South Assuit', image: 'https://via.placeholder.com/300x200' },
-            { name: 'South Assuit', image: 'https://via.placeholder.com/300x200' },
+            { name: 'South ', image: 'https://via.placeholder.com/300x200' },
+            { name: 'seed', image: 'https://via.placeholder.com/300x200' },
           ].map((location) => (
             <div
               key={location.name}

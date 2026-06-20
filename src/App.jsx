@@ -15,6 +15,8 @@ import { AddApartment } from './pages/AddApartment';
 import { EditApartment } from './pages/EditApartment';
 import { ApartmentDetails } from './pages/ApartmentDetails';
 import { BookingRequests } from './pages/BookingRequests';
+import { MyBookings } from './pages/MyBookings';
+import { ChatPage } from './pages/ChatPage';
 
 function App() {
   return (
@@ -91,10 +93,26 @@ function App() {
             }
           />
           <Route
+            path="/my-bookings"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <MyBookings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/apartment/:id"
             element={
               <ProtectedRoute>
                 <ApartmentDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages/:id"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
               </ProtectedRoute>
             }
           />

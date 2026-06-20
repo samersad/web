@@ -1,17 +1,16 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext();
 
 const previewUser = {
   _id: 'student_1',
-  fullName: 'Design Preview User',
-  email: 'student@example.com',
+  fullName: 'Romany Khairi',
+  email: 'romany@example.com',
   phone: '01000000000',
-  role: 'owner',
-  preferredLanguage: 'en',
+  role: 'student',
   gender: 'male',
-  university: 'Assuit University',
-  faculty: 'Engineering',
+  faculty: 'Computer Science',
+  preferredLanguage: 'en',
   isVerified: true,
   isBlocked: false,
   createdAt: '2026-01-15T10:00:00.000Z',
@@ -19,57 +18,119 @@ const previewUser = {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(previewUser);
-  const [loading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   const fetchUser = async () => {
-    setUser((currentUser) => currentUser || previewUser);
-    setIsAuthenticated(true);
-    return user || previewUser;
+    try {
+      const savedUser = localStorage.getItem('user');
+
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+
+        return parsedUser;
+      }
+
+      // Preview Mode
+      setUser(previewUser);
+      setIsAuthenticated(true);
+
+      return previewUser;
+
+    } catch (error) {
+      console.log(error);
+
+      setUser(null);
+      setIsAuthenticated(false);
+
+    } finally {
+      setLoading(false);
+    }
   };
 
   const login = async (email) => {
-    const loggedInUser = { ...previewUser, email };
+    const loggedInUser = {
+      ...previewUser,
+      email,
+    };
+
     setUser(loggedInUser);
+
+    localStorage.setItem(
+      'user',
+      JSON.stringify(loggedInUser)
+    );
+
     setIsAuthenticated(true);
-    return { user: loggedInUser };
+
+    return {
+      user: loggedInUser,
+    };
   };
 
   const register = async (data, role) => {
-    const registeredUser = { ...previewUser, ...data, role };
+    const registeredUser = {
+      ...previewUser,
+      ...data,
+      role,
+    };
+
     setUser(registeredUser);
+
+    localStorage.setItem(
+      'user',
+      JSON.stringify(registeredUser)
+    );
+
     setIsAuthenticated(true);
-    return { user: registeredUser };
+
+    return {
+      user: registeredUser,
+    };
   };
 
   const logout = async () => {
-    setUser(previewUser);
-    setIsAuthenticated(true);
+    localStorage.removeItem('user');
+
+    setUser(null);
+
+    setIsAuthenticated(false);
   };
 
   const value = {
     user,
+    setUser,
     loading,
     isAuthenticated,
     login,
     register,
     logout,
-    setUser,
     fetchUser,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error(
+      'useAuth must be used within AuthProvider'
+    );
   }
+
   return context;
 };
