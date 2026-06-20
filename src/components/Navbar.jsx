@@ -42,14 +42,6 @@ export const Navbar = () => {
             >
               <i className="fas fa-envelope mr-2"></i>Messages
             </Link>
-            {user?.role === 'owner' && (
-              <Link
-                to="/add-apartment"
-                className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition"
-              >
-                <i className="fas fa-plus mr-2"></i>Add Apartment
-              </Link>
-            )}
           </div>
 
           {/* Right Section */}
@@ -71,6 +63,40 @@ export const Navbar = () => {
 
               {profileMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                  {user?.role === 'owner' && (
+                    <>
+                      <Link
+                        to="/my-apartment"
+                        className="block px-4 py-2 text-gray-700 hover:bg-light transition"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <i className="fas fa-building mr-2"></i>My Apartments
+                      </Link>
+                      <Link
+                        to="/booking-requests"
+                        className="block px-4 py-2 text-gray-700 hover:bg-light transition"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <i className="fas fa-calendar-check mr-2"></i>Booking Requests
+                      </Link>
+                      <Link
+                        to="/add-apartment"
+                        className="block px-4 py-2 text-gray-700 hover:bg-light transition"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <i className="fas fa-plus mr-2"></i>Add Apartment
+                      </Link>
+                    </>
+                  )}
+                  {user?.role === 'student' && (
+                    <Link
+                      to="/search"
+                      className="block px-4 py-2 text-gray-700 hover:bg-light transition"
+                      onClick={() => setProfileMenuOpen(false)}
+                    >
+                      <i className="fas fa-search mr-2"></i>Search Apartments
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     className="block px-4 py-2 text-gray-700 hover:bg-light transition"

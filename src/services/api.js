@@ -110,6 +110,63 @@ let mockNotifications = [
   },
 ];
 
+let mockBookings = [
+  {
+    _id: 'booking_1',
+    status: 'pending',
+    checkInDate: '2026-07-01',
+    checkOutDate: '2026-12-31',
+    message: 'I am looking for a quiet apartment near university and would like to rent this unit.',
+    createdAt: '2026-06-19T09:30:00.000Z',
+    apartment: mockApartments[0],
+    student: {
+      _id: 'student_2',
+      fullName: 'Ahmed Hassan',
+      email: 'ahmed@student.com',
+      phone: '01022223333',
+      university: 'Assuit University',
+      faculty: 'Medicine',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+    },
+  },
+  {
+    _id: 'booking_2',
+    status: 'pending',
+    checkInDate: '2026-08-15',
+    checkOutDate: '2027-01-15',
+    message: 'Can I visit the studio this week? I need a furnished place with WiFi.',
+    createdAt: '2026-06-18T14:15:00.000Z',
+    apartment: mockApartments[1],
+    student: {
+      _id: 'student_3',
+      fullName: 'Mariam Ali',
+      email: 'mariam@student.com',
+      phone: '01144445555',
+      university: 'Assuit University',
+      faculty: 'Engineering',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    },
+  },
+  {
+    _id: 'booking_3',
+    status: 'approved',
+    checkInDate: '2026-06-25',
+    checkOutDate: '2026-10-25',
+    message: 'This apartment is suitable for my study group. Please confirm availability.',
+    createdAt: '2026-06-16T11:45:00.000Z',
+    apartment: mockApartments[2],
+    student: {
+      _id: 'student_4',
+      fullName: 'Omar Samir',
+      email: 'omar@student.com',
+      phone: '01266667777',
+      university: 'Assuit University',
+      faculty: 'Commerce',
+      avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=200&q=80',
+    },
+  },
+];
+
 const respond = (data) => Promise.resolve({ data });
 
 const filterApartments = (filters = {}) => {
@@ -187,11 +244,32 @@ export const apartmentsAPI = {
 };
 
 export const bookingsAPI = {
-  getMyBookings: () => respond([]),
-  createBooking: () => respond({ message: 'Booking request sent' }),
+  getMyBookings: () => respond({ bookings: mockBookings }),
+  createBooking: (data) => {
+    const booking = {
+      _id: `booking_${Date.now()}`,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      apartment: mockApartments.find((apartment) => apartment._id === data.apartmentId) || mockApartments[0],
+      student: { ...mockUser, role: 'student' },
+      ...data,
+    };
+    mockBookings = [booking, ...mockBookings];
+    return respond(booking);
+  },
   cancelBooking: () => respond({ message: 'Booking cancelled' }),
-  acceptBooking: () => respond({ message: 'Booking accepted' }),
-  rejectBooking: () => respond({ message: 'Booking rejected' }),
+  acceptBooking: (id) => {
+    mockBookings = mockBookings.map((booking) => (
+      booking._id === id ? { ...booking, status: 'approved' } : booking
+    ));
+    return respond({ message: 'Booking accepted' });
+  },
+  rejectBooking: (id) => {
+    mockBookings = mockBookings.map((booking) => (
+      booking._id === id ? { ...booking, status: 'declined' } : booking
+    ));
+    return respond({ message: 'Booking declined' });
+  },
 };
 
 export const reviewsAPI = {

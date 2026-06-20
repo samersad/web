@@ -106,7 +106,7 @@ export const EditApartment = () => {
       await apartmentsAPI.updateApartment(id, submitData);
       setSuccessMessage('Apartment updated successfully!');
       setTimeout(() => {
-        navigate('/owner-home');
+        navigate('/my-apartment');
       }, 2000);
     } catch (err) {
       const errData = err.response?.data;
@@ -407,7 +407,7 @@ export const EditApartment = () => {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => navigate('/owner-home')}
+              onClick={() => navigate('/my-apartment')}
               className="flex-1 bg-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-400 transition"
             >
               Cancel

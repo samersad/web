@@ -7,13 +7,14 @@ import { Loading } from './components/Loading/Loading';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { StudentHome } from './pages/StudentHome';
-import { OwnerHome } from './pages/OwnerHome';
+import { MyApartment } from './pages/MyApartment';
 import { Search } from './pages/Search';
 import { Messages } from './pages/Messages';
 import { Profile } from './pages/Profile';
 import { AddApartment } from './pages/AddApartment';
 import { EditApartment } from './pages/EditApartment';
 import { ApartmentDetails } from './pages/ApartmentDetails';
+import { BookingRequests } from './pages/BookingRequests';
 
 function App() {
   return (
@@ -34,10 +35,10 @@ function App() {
             }
           />
           <Route
-            path="/owner-home"
+            path="/my-apartment"
             element={
               <ProtectedRoute requiredRole="owner">
-                <OwnerHome />
+                <MyApartment />
               </ProtectedRoute>
             }
           />
@@ -70,6 +71,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole="owner">
                 <AddApartment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/booking-requests"
+            element={
+              <ProtectedRoute requiredRole="owner">
+                <BookingRequests />
               </ProtectedRoute>
             }
           />

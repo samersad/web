@@ -62,7 +62,7 @@ export const AddApartment = () => {
       await apartmentsAPI.createApartment(submitData);
       setSuccessMessage('Apartment added successfully! It will be reviewed before publishing.');
       setTimeout(() => {
-        navigate('/owner-home');
+        navigate('/my-apartment');
       }, 2000);
     } catch (err) {
       const errData = err.response?.data;
@@ -342,7 +342,7 @@ export const AddApartment = () => {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => navigate('/owner-home')}
+              onClick={() => navigate('/my-apartment')}
               className="flex-1 bg-gray-300 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-400 transition"
             >
               Cancel

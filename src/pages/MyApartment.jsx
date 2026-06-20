@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { apartmentsAPI } from '../services/api';
-import { ApartmentCard } from '../components/ApartmentCard';
 
-export const OwnerHome = () => {
+export const MyApartment = () => {
   const [apartments, setApartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -27,26 +26,45 @@ export const OwnerHome = () => {
     }
   };
 
-  return (
-    <div className="w-full min-h-screen bg-light">
-      <Navbar />
+  const handleDeleteApartment = async (id) => {
+    const shouldDelete = window.confirm('Are you sure you want to delete this apartment?');
+    if (!shouldDelete) return;
 
-      {/* Hero Section with Add Button */}
-      <div className="bg-gradient-to-r from-primary to-secondary text-white py-12 px-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h2 className="text-4xl font-bold mb-2">Manage Your Apartments</h2>
-            <p className="text-blue-100">List and manage all your properties</p>
+    try {
+      await apartmentsAPI.deleteApartment(id);
+      setApartments((currentApartments) => currentApartments.filter((apartment) => apartment._id !== id));
+    } catch (error) {
+      console.error('Error deleting apartment:', error);
+    }
+  };
+
+  return (
+      <div className="w-full min-h-screen bg-[#f6f7fb]">
+        <Navbar />
+
+        {/* Hero Section with Add Button */}
+        <div className="px-4 pt-8">
+          <div className="max-w-7xl mx-auto rounded-[28px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] px-6 py-8 md:px-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  Owner workspace
+                </div>
+                <h2 className="mt-4 text-4xl font-bold text-slate-900">My Apartments</h2>
+                <p className="mt-2 max-w-2xl text-slate-600">
+                  View details, edit, or delete your listed apartments
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/add-apartment')}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3 font-bold text-white transition hover:bg-slate-800"
+              >
+                <i className="fas fa-plus"></i>
+                <span>Add Apartment</span>
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => navigate('/add-apartment')}
-            className="bg-accent hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition flex items-center space-x-2"
-          >
-            <i className="fas fa-plus"></i>
-            <span>Add Apartment</span>
-          </button>
         </div>
-      </div>
 
       {/* Statistics */}
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -120,19 +138,40 @@ export const OwnerHome = () => {
                         <i className="fas fa-map-marker-alt mr-2 text-primary"></i>
                         {apartment.city && apartment.district ? `${apartment.district}, ${apartment.city}` : (apartment.location || '')}
                       </p>
-                      <p className="text-gray-600 mb-4">{(apartment.description_en || apartment.description_ar || apartment.description || '').substring(0, 100)}...</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-700">
+                      <p className="text-gray-600 mb-4">{apartment.description_en || apartment.description_ar || apartment.description || ''}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-700">
                         {apartment.beds && (
                           <span><i className="fas fa-bed mr-1 text-primary"></i>{apartment.beds} Beds</span>
                         )}
                         {apartment.rooms && (
                           <span><i className="fas fa-door-open mr-1 text-primary"></i>{apartment.rooms} Rooms</span>
                         )}
+                        {apartment.bathrooms && (
+                          <span><i className="fas fa-bath mr-1 text-primary"></i>{apartment.bathrooms} Bathrooms</span>
+                        )}
+                        {apartment.floor && (
+                          <span><i className="fas fa-layer-group mr-1 text-primary"></i>Floor {apartment.floor}</span>
+                        )}
+                        {apartment.apartmentType && (
+                          <span><i className="fas fa-house-user mr-1 text-primary"></i>{apartment.apartmentType}</span>
+                        )}
+                        {apartment.availability && (
+                          <span><i className="fas fa-key mr-1 text-primary"></i>{apartment.availability}</span>
+                        )}
                       </div>
+                      {apartment.amenities?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {apartment.amenities.map((amenity) => (
+                            <span key={amenity} className="px-3 py-1 bg-light text-primary rounded-full text-xs font-semibold">
+                              {amenity}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Status & Actions */}
-                    <div className="text-right">
+                    <div className="text-right min-w-[170px]">
                       <div className="mb-4">
                         <p className="text-2xl font-bold text-accent">${apartment.price}/mo</p>
                         <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
@@ -146,7 +185,7 @@ export const OwnerHome = () => {
                         </span>
                       </div>
 
-                      <div className="flex space-x-2">
+                      <div className="flex flex-col gap-2">
                         <button
                           onClick={() => navigate(`/apartment/${apartment._id}`)}
                           className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition text-sm"
@@ -158,6 +197,12 @@ export const OwnerHome = () => {
                           className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-primary transition text-sm"
                         >
                           <i className="fas fa-edit mr-2"></i>Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteApartment(apartment._id)}
+                          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                        >
+                          <i className="fas fa-trash mr-2"></i>Delete
                         </button>
                       </div>
                     </div>
