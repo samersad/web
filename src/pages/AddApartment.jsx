@@ -23,8 +23,8 @@ export const AddApartment = () => {
     latitude: '',
     longitude: '',
     images: [],
+    video: null,
   });
-  const [preview, setPreview] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -36,12 +36,11 @@ export const AddApartment = () => {
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setFormData(prev => ({ ...prev, images: files }));
-
-    // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
-    setPreview(previews);
+  const files = Array.from(e.target.files);
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...files],
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -50,16 +49,37 @@ export const AddApartment = () => {
     setLoading(true);
 
     try {
-      const submitData = {
-        ...formData,
-        price: Number(formData.price),
-        beds: Number(formData.beds),
-        rooms: Number(formData.rooms),
-        bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
-        floor: formData.floor ? Number(formData.floor) : undefined,
-      };
+      const form = new FormData();
 
-      await apartmentsAPI.createApartment(submitData);
+      form.append("title", formData.title);
+      form.append("description_en", formData.description_en);
+      form.append("description_ar", formData.description_ar);
+      form.append("price", Number(formData.price));
+      form.append("city", formData.city);
+      form.append("district", formData.district);
+      form.append("address", formData.address);
+      form.append("buildingNumber", formData.buildingNumber);
+      form.append("unitNumber", formData.unitNumber);
+      form.append("apartmentType", formData.apartmentType);
+      form.append("beds", Number(formData.beds));
+      form.append("rooms", Number(formData.rooms));
+      form.append("bathrooms", formData.bathrooms ? Number(formData.bathrooms) : "");
+      form.append("floor", formData.floor ? Number(formData.floor) : "");
+      form.append("latitude", formData.latitude);
+      form.append("longitude", formData.longitude);
+      form.append("amenities", formData.amenities);
+
+      // الصور
+      formData.images.forEach((img) => {
+      form.append("images", img);
+      });
+
+      if (formData.video) {
+      form.append("video", formData.video);
+      }
+
+      await apartmentsAPI.createApartment(form);
+
       setSuccessMessage('Apartment added successfully! It will be reviewed before publishing.');
       setTimeout(() => {
         navigate('/my-apartment');
@@ -76,6 +96,13 @@ export const AddApartment = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -269,19 +296,6 @@ export const AddApartment = () => {
               </div>
             </div>
 
-            {/* Amenities */}
-            <div className="mt-6">
-              <label className="block text-gray-700 font-semibold mb-2">Extra Details</label>
-              <input
-                type="text"
-                name="amenities"
-                value={formData.amenities}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="wifi,desk,balcony,ac (comma-separated)"
-              />
-              <p className="text-sm text-gray-500 mt-1">Separate details with commas</p>
-            </div>
           </div>
 
           {/* Media */}
@@ -306,16 +320,54 @@ export const AddApartment = () => {
               </div>
 
               {/* Image Previews */}
-              {preview.length > 0 && (
+              {formData.images.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  {preview.map((img, index) => (
-                    <div key={index} className="relative rounded-lg overflow-hidden h-32 bg-gray-300">
-                      <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
+                  {formData.images.map((file, index) => {
+                    const url = file instanceof File ? URL.createObjectURL(file) : file;
+
+                    return (
+                      <div key={index} className="relative group rounded-lg overflow-hidden h-32">
+                        <img src={url} className="w-full h-full object-cover" />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              images: prev.images.filter((_, i) => i !== index),
+                            }));
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Video Upload */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-primary mb-6">Video</h2>
+
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) =>
+                setFormData({ ...formData, video: e.target.files[0] })
+              }
+            />
+
+            {formData.video && (
+              <video
+                controls
+                className="w-full mt-4 rounded-lg"
+                src={URL.createObjectURL(formData.video)}
+              />
+            )}
           </div>
 
           {/* Description */}
