@@ -10,7 +10,6 @@ const previewUser = {
   role: 'owner',
   gender: 'male',
   faculty: 'Computer Science',
-  preferredLanguage: 'en',
   isVerified: true,
   isBlocked: false,
   createdAt: '2026-01-15T10:00:00.000Z',
