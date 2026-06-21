@@ -7,13 +7,13 @@ import {
   ForgotPasswordError,
 } from '../components/ForgotPasswordLayout';
 import { authAPI } from '../services/api';
+import { getApiErrorMessage } from '../services/apiClient';
 import forgetpassImg from '../assets/forgetpass.png';
 
 export const ResetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || '';
-  const otp = location.state?.otp || '';
+  const resetToken = location.state?.resetToken || window.sessionStorage.getItem('sokon_reset_token') || '';
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,18 +28,24 @@ export const ResetPassword = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password)) {
+      setError('Password must be at least 8 characters and include letters and numbers.');
+      return;
+    }
+
+    if (!resetToken) {
+      setError('No password reset was requested. Please request a new code.');
       return;
     }
 
     setLoading(true);
 
     try {
-      await authAPI.resetPassword({ email, otp, password });
+      await authAPI.resetPassword({ token: resetToken, password });
+      window.sessionStorage.removeItem('sokon_reset_token');
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to reset password. Please try again.');
+      setError(getApiErrorMessage(err, 'Unable to reset password. Please try again.'));
     } finally {
       setLoading(false);
     }

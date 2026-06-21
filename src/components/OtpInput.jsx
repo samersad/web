@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-export const OtpInput = ({ length = 4, value, onChange }) => {
+export const OtpInput = ({ length = 6, value, onChange }) => {
   const inputsRef = useRef([]);
 
   const digits = value.split('').concat(Array(length).fill('')).slice(0, length);

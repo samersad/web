@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getApiErrorMessage } from '../services/apiClient';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,9 +21,20 @@ export const Login = () => {
       await login(email, password);
       navigate('/home');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(getApiErrorMessage(err, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Google login failed. Please try again.'));
+      setGoogleLoading(false);
     }
   };
 
@@ -46,12 +59,12 @@ export const Login = () => {
           <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center">
             <div className="mb-2">
               <input
-                type="text"
-                id="username"
-                name="username"
+                type="email"
+                id="email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Username"
+                placeholder="Email"
                 required
                 className="w-[350px] h-[50px] px-2 border border-[#ccc] rounded-[5px] bg-white"
               />
@@ -79,19 +92,32 @@ export const Login = () => {
               disabled={loading}
               className="w-[175px] h-[45px] mt-5 rounded-[8px] bg-[#245999] text-white text-[16px]"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Logging in...
+                </span>
+              ) : (
+                'Login'
+              )}
             </button>
           </form>
 
           <div className="flex justify-center gap-[24px] mt-[24px] mb-[12px]">
             <div className="w-[48px] h-[48px] flex items-center justify-center rounded-full bg-[#f2f2f2] shadow-md hover:bg-gray-200 transition transform hover:-translate-y-0.5 hover:scale-105">
-              <a href="#"><i className="fa-brands fa-google text-[24px] text-[#245999]"></i></a>
+              <button type="button" aria-label="Google login" onClick={handleGoogleLogin} disabled={googleLoading} className="flex items-center justify-center border-0 bg-transparent p-0 disabled:opacity-50">
+                <i className="fa-brands fa-google text-[24px] text-[#245999]"></i>
+              </button>
             </div>
             <div className="w-[48px] h-[48px] flex items-center justify-center rounded-full bg-[#f2f2f2] shadow-md hover:bg-gray-200 transition transform hover:-translate-y-0.5 hover:scale-105">
-              <a href="#"><i className="fa-brands fa-apple text-[24px] text-[#245999]"></i></a>
+              <button type="button" aria-label="Apple login coming soon" className="flex items-center justify-center border-0 bg-transparent p-0">
+                <i className="fa-brands fa-apple text-[24px] text-[#245999]"></i>
+              </button>
             </div>
             <div className="w-[48px] h-[48px] flex items-center justify-center rounded-full bg-[#f2f2f2] shadow-md hover:bg-gray-200 transition transform hover:-translate-y-0.5 hover:scale-105">
-              <a href="#"><i className="fa-brands fa-facebook text-[24px] text-[#245999]"></i></a>
+              <button type="button" aria-label="Facebook login coming soon" className="flex items-center justify-center border-0 bg-transparent p-0">
+                <i className="fa-brands fa-facebook text-[24px] text-[#245999]"></i>
+              </button>
             </div>
           </div>
 

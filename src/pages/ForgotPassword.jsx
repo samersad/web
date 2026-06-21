@@ -7,6 +7,7 @@ import {
   ForgotPasswordError,
 } from '../components/ForgotPasswordLayout';
 import { authAPI } from '../services/api';
+import { getApiErrorMessage } from '../services/apiClient';
 import forgetpassImg from '../assets/forgetpass.png';
 
 export const ForgotPassword = () => {
@@ -24,7 +25,7 @@ export const ForgotPassword = () => {
       await authAPI.forgotPassword({ email });
       navigate('/forgot-password/verify', { state: { email } });
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to send verification code. Please try again.');
+      setError(getApiErrorMessage(err, 'Unable to send verification code. Please try again.'));
     } finally {
       setLoading(false);
     }

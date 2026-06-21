@@ -1,289 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
-import { notificationsAPI } from '../services/api';
+import { chatAPI } from '../services/api';
+import { useStoreVersion } from '../hooks/useStoreVersion';
 
 export const Messages = () => {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const storeVersion = useStoreVersion();
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const response = await notificationsAPI.getMyNotifications();
-      const resData = response.data;
-      const notificationList = Array.isArray(resData) ? resData : (resData?.notifications || []);
-      setNotifications(notificationList);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMarkAsRead = async (id) => {
-    try {
-      await notificationsAPI.markAsRead(id);
-      fetchNotifications();
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationsAPI.markAllAsRead();
-      fetchNotifications();
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
-return (
-<div className="w-full min-h-screen bg-[#f6f7fb]">
-<Navbar />
-
-{/* Hero */}
-<div className="px-4 pt-8">
-<div className="max-w-7xl mx-auto rounded-[28px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] px-6 py-8 md:px-8">
-
-<div className="flex flex-col md:flex-row justify-between items-center gap-6">
-
-<div>
-<div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-Activity Center
-</div>
-
-<h1 className="mt-4 text-4xl font-bold text-slate-900">
-Messages
-</h1>
-
-<p className="mt-2 text-slate-500">
-Chat updates, booking requests and apartment notifications
-</p>
-</div>
-
-{notifications.some(n => !n.isRead) && (
-<button
-onClick={handleMarkAllAsRead}
-className="rounded-full bg-slate-900 text-white px-6 py-3 font-semibold hover:bg-slate-800 transition"
->
-<i className="fas fa-check-double mr-2"></i>
-Mark all as read
-</button>
-)}
-
-</div>
-
-</div>
-</div>
-
-{/* Stats */}
-
-<div className="max-w-7xl mx-auto px-4 py-8">
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-<div className="flex justify-between items-center">
-<div>
-<p className="text-gray-500 text-sm">
-Total Messages
-</p>
-
-<p className="text-3xl font-bold mt-2">
-{notifications.length}
-</p>
-</div>
-
-<i className="fas fa-envelope text-4xl text-gray-200"></i>
-</div>
-</div>
-
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-<div className="flex justify-between items-center">
-<div>
-<p className="text-gray-500 text-sm">
-Unread
-</p>
-
-<p className="text-3xl font-bold text-blue-600 mt-2">
-{notifications.filter(n=>!n.isRead).length}
-</p>
-</div>
-
-<i className="fas fa-bell text-4xl text-gray-200"></i>
-</div>
-</div>
-
-<div className="bg-white rounded-2xl p-6 shadow-sm">
-<div className="flex justify-between items-center">
-<div>
-<p className="text-gray-500 text-sm">
-Booking Updates
-</p>
-
-<p className="text-3xl font-bold text-green-600 mt-2">
-{
-notifications.filter(
-n=>n.type==="booking"
-).length
-}
-</p>
-</div>
-
-<i className="fas fa-calendar-check text-4xl text-gray-200"></i>
-</div>
-</div>
-
-</div>
-</div>
-
-{/* Messages */}
-
-<div className="max-w-7xl mx-auto px-4 pb-8">
-
-{loading ? (
-
-<div className="text-center py-20">
-<p>Loading...</p>
-</div>
-
-) : notifications.length>0 ? (
-
-<div className="space-y-5">
-
-{notifications.map((notification)=>(
-
-<div
-key={notification._id}
-onClick={()=>
-!notification.isRead &&
-handleMarkAsRead(notification._id)
-}
-className={`bg-white rounded-[24px] p-6 shadow-sm hover:shadow-lg transition cursor-pointer border
-
-${!notification.isRead
-? 'border-blue-200'
-: 'border-transparent'
-}
-`}
->
-
-<div className="flex gap-5">
-
-{/* icon */}
-
-<div className={`w-14 h-14 rounded-full flex items-center justify-center
-
-${notification.isRead
-? 'bg-gray-100'
-: 'bg-blue-100'
-}`}
-
->
-
-<i className={`fas ${
-notification.type==="booking"
-?'fa-calendar-check'
-:'fa-message'
-}
-
-${notification.isRead
-? 'text-gray-500'
-:'text-blue-600'
-}
-`}
-></i>
-
-</div>
-
-{/* content */}
-
-<div className="flex-1">
-
-<div className="flex justify-between items-start">
-
-<div>
-
-<div className="flex items-center gap-3">
-
-<h3 className="font-bold text-lg">
-{notification.title}
-</h3>
-
-{!notification.isRead && (
-
-<span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
-New
-</span>
-
-)}
-
-</div>
-
-<p className="text-gray-600 mt-2 line-clamp-2">
-{notification.message}
-</p>
-
-<p className="text-sm text-gray-400 mt-3">
-{new Date(notification.createdAt)
-.toLocaleString()}
-</p>
-
-</div>
-
-{notification.relatedApartment && (
-
-<div className="hidden md:block">
-
-<img
-src={
-notification.relatedApartment.images?.[0]
-||
-'https://via.placeholder.com/90'
-}
-className="w-24 h-24 rounded-xl object-cover"
-/>
-
-</div>
-
-)}
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-))}
-
-</div>
-
-) : (
-
-<div className="bg-white rounded-[28px] py-20 text-center">
-
-<i className="fas fa-inbox text-6xl text-gray-300 mb-5"></i>
-
-<h3 className="text-2xl font-bold mb-2">
-No messages yet
-</h3>
-
-<p className="text-gray-500">
-New notifications and booking activity will appear here
-</p>
-
-</div>
-
-)}
-
-</div>
-
-</div>
-);
+    const loadConversations = async () => {
+      setLoading(true);
+
+      try {
+        const response = await chatAPI.getConversations();
+        const data = response.data;
+        setConversations(Array.isArray(data) ? data : (data?.conversations || []));
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConversations();
+  }, [storeVersion]);
+
+  return (
+    <div className="min-h-screen bg-[#f6f7fb]">
+      <Navbar />
+
+      <div className="px-4 pt-8">
+        <div className="mx-auto max-w-7xl rounded-[32px] border border-slate-200 bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:px-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Real-time chat
+              </div>
+              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-900">
+                Messages
+              </h1>
+              <p className="mt-2 max-w-2xl text-slate-600">
+                Students and owners can message each other here. Image attachments are supported.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('/home')}
+              className="rounded-full bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800"
+            >
+              Browse apartments
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        {loading ? (
+          <div className="rounded-[28px] bg-white py-20 text-center text-slate-500 shadow-sm">
+            Loading conversations...
+          </div>
+        ) : conversations.length > 0 ? (
+          <div className="space-y-4">
+            {conversations.map((conversation) => (
+              <button
+                key={conversation._id}
+                type="button"
+                onClick={() => navigate(`/messages/${conversation._id}`)}
+                className="w-full rounded-[28px] border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100">
+                    <img
+                      src={conversation.otherParticipant?.avatar || 'https://via.placeholder.com/80'}
+                      alt={conversation.otherParticipant?.fullName || 'Participant'}
+                      className="h-full w-full object-cover"
+                    />
+                    {conversation.unreadCount > 0 && (
+                      <span className="absolute right-1 top-1 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-xl font-black text-slate-900">
+                        {conversation.otherParticipant?.fullName || 'Conversation'}
+                      </h3>
+                      {conversation.apartment && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                          {conversation.apartment.title || conversation.apartment.name}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      {conversation.lastMessage?.text
+                        ? conversation.lastMessage.text
+                        : conversation.lastMessage?.images?.length
+                          ? `Shared ${conversation.lastMessage.images.length} image${conversation.lastMessage.images.length > 1 ? 's' : ''}`
+                          : 'No messages yet'}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm text-slate-400">
+                      {conversation.updatedAt ? new Date(conversation.updatedAt).toLocaleDateString() : ''}
+                    </p>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Open chat
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[28px] bg-white py-20 text-center shadow-sm">
+            <i className="fas fa-comments text-6xl text-slate-300 mb-5"></i>
+            <h3 className="text-2xl font-bold mb-2 text-slate-900">No conversations yet</h3>
+            <p className="text-slate-500">Start a chat from an apartment detail page.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };

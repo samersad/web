@@ -1,313 +1,34 @@
-const mockUser = {
-  _id: 'student_1',
-  fullName: 'Design Preview User',
-  email: 'student@example.com',
-  phone: '01000000000',
-  role: 'owner',
-  preferredLanguage: 'en',
-  gender: 'male',
-  university: 'Assuit University',
-  faculty: 'Engineering',
-  isVerified: true,
-  isBlocked: false,
-  createdAt: '2026-01-15T10:00:00.000Z',
-  avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-};
-
-let mockApartments = [
-  {
-    _id: 'apt_1',
-    title: 'Sunny Apartment Near Assuit University',
-    name: 'Sunny Apartment Near Assuit University',
-    description: 'A bright furnished apartment five minutes from campus with WiFi, AC, a study desk, and a quiet balcony.',
-    description_en: 'A bright furnished apartment five minutes from campus with WiFi, AC, a study desk, and a quiet balcony.',
-    price: 4500,
-    city: 'Assuit',
-    district: 'Downtown',
-    location: 'Downtown, Assuit',
-    beds: 2,
-    rooms: 3,
-    bathrooms: 1,
-    floor: 3,
-    apartmentType: 'apartment',
-    status: 'approved',
-    availability: 'available',
-    amenities: ['wifi', 'ac', 'desk', 'balcony'],
-    images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1000&q=80',
-    ],
-    owner: mockUser,
-  },
-  {
-    _id: 'apt_2',
-    title: 'Modern Studio for Students',
-    name: 'Modern Studio for Students',
-    description: 'Compact studio with clean finishes, natural light, and easy access to transport and daily services.',
-    description_en: 'Compact studio with clean finishes, natural light, and easy access to transport and daily services.',
-    price: 3200,
-    city: 'Assuit',
-    district: 'University District',
-    location: 'University District, Assuit',
-    beds: 1,
-    rooms: 1,
-    bathrooms: 1,
-    floor: 2,
-    apartmentType: 'studio',
-    status: 'pending_approval',
-    availability: 'available',
-    amenities: ['wifi', 'desk'],
-    images: [
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1000&q=80',
-    ],
-    owner: mockUser,
-  },
-  {
-    _id: 'apt_3',
-    title: 'Shared Apartment With Large Living Room',
-    name: 'Shared Apartment With Large Living Room',
-    description: 'Comfortable shared apartment with spacious rooms, a fitted kitchen, and secure building access.',
-    description_en: 'Comfortable shared apartment with spacious rooms, a fitted kitchen, and secure building access.',
-    price: 5200,
-    city: 'Assuit',
-    district: 'North Assuit',
-    location: 'North Assuit, Assuit',
-    beds: 3,
-    rooms: 4,
-    bathrooms: 2,
-    floor: 5,
-    apartmentType: 'apartment',
-    status: 'approved',
-    availability: 'available',
-    amenities: ['wifi', 'kitchen', 'security'],
-    images: [
-      'https://images.unsplash.com/photo-1560184897-ae75f418493e?auto=format&fit=crop&w=1000&q=80',
-      'https://images.unsplash.com/photo-1560448075-bb485b067938?auto=format&fit=crop&w=1000&q=80',
-    ],
-    owner: mockUser,
-  },
-];
-
-let mockNotifications = [
-  {
-    _id: 'msg_1',
-    title: 'Booking request received',
-    message: 'A student sent a request for Sunny Apartment Near Assuit University.',
-    isRead: false,
-    createdAt: new Date().toISOString(),
-    relatedApartment: mockApartments[0],
-  },
-  {
-    _id: 'msg_2',
-    title: 'Apartment approved',
-    message: 'Your listing is now visible in search results.',
-    isRead: true,
-    createdAt: '2026-06-18T12:30:00.000Z',
-    relatedApartment: mockApartments[2],
-  },
-];
-
-let mockBookings = [
-  {
-    _id: 'booking_1',
-    status: 'pending',
-    checkInDate: '2026-07-01',
-    checkOutDate: '2026-12-31',
-    message: 'I am looking for a quiet apartment near university and would like to rent this unit.',
-    createdAt: '2026-06-19T09:30:00.000Z',
-    apartment: mockApartments[0],
-    student: {
-      _id: 'student_2',
-      fullName: 'Ahmed Hassan',
-      email: 'ahmed@student.com',
-      phone: '01022223333',
-      university: 'Assuit University',
-      faculty: 'Medicine',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
-    },
-  },
-  {
-    _id: 'booking_2',
-    status: 'pending',
-    checkInDate: '2026-08-15',
-    checkOutDate: '2027-01-15',
-    message: 'Can I visit the studio this week? I need a furnished place with WiFi.',
-    createdAt: '2026-06-18T14:15:00.000Z',
-    apartment: mockApartments[1],
-    student: {
-      _id: 'student_3',
-      fullName: 'Mariam Ali',
-      email: 'mariam@student.com',
-      phone: '01144445555',
-      university: 'Assuit University',
-      faculty: 'Engineering',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-    },
-  },
-  {
-    _id: 'booking_3',
-    status: 'approved',
-    checkInDate: '2026-06-25',
-    checkOutDate: '2026-10-25',
-    message: 'This apartment is suitable for my study group. Please confirm availability.',
-    createdAt: '2026-06-16T11:45:00.000Z',
-    apartment: mockApartments[2],
-    student: {
-      _id: 'student_4',
-      fullName: 'Omar Samir',
-      email: 'omar@student.com',
-      phone: '01266667777',
-      university: 'Assuit University',
-      faculty: 'Commerce',
-      avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=200&q=80',
-    },
-  },
-];
-
-const respond = (data) => Promise.resolve({ data });
-
-const filterApartments = (filters = {}) => {
-  const q = filters.q?.toLowerCase?.() || '';
-  return mockApartments.filter((apartment) => {
-    const matchesQuery = !q || [apartment.title, apartment.city, apartment.district, apartment.description]
-      .join(' ')
-      .toLowerCase()
-      .includes(q);
-    const matchesMin = !filters.minPrice || apartment.price >= Number(filters.minPrice);
-    const matchesMax = !filters.maxPrice || apartment.price <= Number(filters.maxPrice);
-    const matchesBeds = !filters.beds || apartment.beds >= Number(filters.beds);
-    const matchesCity = !filters.city || apartment.city.toLowerCase().includes(filters.city.toLowerCase());
-    const matchesDistrict = !filters.district || apartment.district.toLowerCase().includes(filters.district.toLowerCase());
-    const matchesType = !filters.apartmentType || apartment.apartmentType === filters.apartmentType;
-    return matchesQuery && matchesMin && matchesMax && matchesBeds && matchesCity && matchesDistrict && matchesType;
-  });
-};
-
-export const authAPI = {
-  register: (data, role) => respond({ user: { ...mockUser, ...data, role }, message: 'Design-only registration complete.' }),
-  login: (email) => respond({
-    user: { ...mockUser, email },
-    accessToken: 'design-token',
-    refreshToken: 'design-refresh-token',
-  }),
-  logout: () => respond({ message: 'Logged out' }),
-  verifyEmail: () => respond({ message: 'Email verified' }),
-  forgotPassword: () => respond({ message: 'Password reset email sent' }),
-  resetPassword: () => respond({ message: 'Password reset complete' }),
-};
-
-export const usersAPI = {
-  getMe: () => respond({ user: mockUser }),
-  updateProfile: (data) => {
-    Object.assign(mockUser, data, {
-      avatar: data.avatar instanceof File ? URL.createObjectURL(data.avatar) : data.avatar || mockUser.avatar,
-    });
-    return respond(mockUser);
-  },
-  getUsers: () => respond([mockUser]),
-  getUser: () => respond(mockUser),
-  adminUpdateUser: (_, data) => respond({ ...mockUser, ...data }),
-  deleteUser: () => respond({ message: 'User removed' }),
-};
-
-export const apartmentsAPI = {
-  getApartments: (filters = {}) => respond({ apartments: filterApartments(filters) }),
-  getApartment: (id) => respond(mockApartments.find((apartment) => apartment._id === id) || mockApartments[0]),
-  getMyApartments: () => respond({ apartments: mockApartments }),
-  createApartment: (data) => {
-    const apartment = {
-      _id: `apt_${Date.now()}`,
-      ...data,
-      name: data.title,
-      status: 'pending_approval',
-      owner: mockUser,
-      images: data.images?.length ? data.images.map((file) => URL.createObjectURL(file)) : mockApartments[0].images,
-    };
-    mockApartments = [apartment, ...mockApartments];
-    return respond(apartment);
-  },
-  updateApartment: (id, data) => {
-    mockApartments = mockApartments.map((apartment) => (
-      apartment._id === id
-        ? { ...apartment, ...data, images: data.images?.length ? data.images.map((file) => URL.createObjectURL(file)) : apartment.images }
-        : apartment
-    ));
-    return respond(mockApartments.find((apartment) => apartment._id === id));
-  },
-  deleteApartment: (id) => {
-    mockApartments = mockApartments.filter((apartment) => apartment._id !== id);
-    return respond({ message: 'Apartment removed' });
-  },
-};
-
-export const bookingsAPI = {
-  getMyBookings: () => respond({ bookings: mockBookings }),
-  createBooking: (data) => {
-    const booking = {
-      _id: `booking_${Date.now()}`,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      apartment: mockApartments.find((apartment) => apartment._id === data.apartmentId) || mockApartments[0],
-      student: { ...mockUser, role: 'student' },
-      ...data,
-    };
-    mockBookings = [booking, ...mockBookings];
-    return respond(booking);
-  },
-  cancelBooking: () => respond({ message: 'Booking cancelled' }),
-  acceptBooking: (id) => {
-    mockBookings = mockBookings.map((booking) => (
-      booking._id === id ? { ...booking, status: 'approved' } : booking
-    ));
-    return respond({ message: 'Booking accepted' });
-  },
-  rejectBooking: (id) => {
-    mockBookings = mockBookings.map((booking) => (
-      booking._id === id ? { ...booking, status: 'declined' } : booking
-    ));
-    return respond({ message: 'Booking declined' });
-  },
-};
-
-export const reviewsAPI = {
-  getApartmentReviews: () => respond({ reviews: [] }),
-  createReview: () => respond({ message: 'Review added' }),
-  deleteReview: () => respond({ message: 'Review removed' }),
-};
-
-export const notificationsAPI = {
-  getMyNotifications: () => respond({ notifications: mockNotifications }),
-  markAllAsRead: () => {
-    mockNotifications = mockNotifications.map((notification) => ({ ...notification, isRead: true }));
-    return respond({ message: 'All read' });
-  },
-  markAsRead: (id) => {
-    mockNotifications = mockNotifications.map((notification) => (
-      notification._id === id ? { ...notification, isRead: true } : notification
-    ));
-    return respond({ message: 'Read' });
-  },
-};
-
-export const adminAPI = {
-  blockUser: () => respond({ message: 'User blocked' }),
-  unblockUser: () => respond({ message: 'User unblocked' }),
-  approveApartment: () => respond({ message: 'Apartment approved' }),
-  rejectApartment: () => respond({ message: 'Apartment rejected' }),
-  removeApartment: () => respond({ message: 'Apartment removed' }),
-  createAnnouncement: () => respond({ message: 'Announcement created' }),
-};
-
-export const analyticsAPI = {
-  getDashboard: () => respond({ apartments: mockApartments.length, users: 1, bookings: 0 }),
-};
-
-export default {
-  get: () => respond({}),
-  post: () => respond({}),
-  patch: () => respond({}),
-  delete: () => respond({}),
-};
+export {
+  default,
+  apiClient,
+  appendFormValue,
+  clearStoredSession,
+  emitStoreChange,
+  extractAuthTokens,
+  formDataToObject,
+  getApiErrorMessage,
+  getStoreVersion,
+  getStoredAccessToken,
+  getStoredUser,
+  objectToFormData,
+  setStoredAccessToken,
+  setStoredUser,
+  subscribeToStore,
+} from './apiClient';
+export { authAPI, authService } from './authService';
+export {
+  clearStoredSession as clearUserSession,
+  getCurrentUser,
+  getUserById,
+  getUsers,
+  mapUser,
+  normalizeRoleForApi,
+  normalizeRoleForUi,
+  updateCurrentUser,
+  usersAPI,
+} from './userService';
+export { apartmentsAPI, mapApartment } from './apartmentService';
+export { bookingsAPI, mapBooking } from './bookingService';
+export { reviewsAPI, mapReview } from './reviewService';
+export { notificationsAPI, mapNotification } from './notificationService';
+export { chatAPI, mapChat, mapMessage } from './chatService';

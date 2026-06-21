@@ -2,80 +2,98 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { apartmentsAPI } from '../services/api';
+import { LocationPickerModal } from '../components/LocationPickerModal';
 
 export const AddApartment = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
     description_en: '',
-    description_ar: '',
     price: '',
-    city: '',
+    city: 'Asyut',
     district: '',
     address: '',
-    buildingNumber: '',
-    unitNumber: '',
-    apartmentType: 'apartment',
     beds: '',
     rooms: '',
     bathrooms: '',
     floor: '',
-    amenities: '',
     latitude: '',
     longitude: '',
+    maxPeople: 4,
     images: [],
     video: null,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const navigate = useNavigate();
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
-  const files = Array.from(e.target.files);
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...files],
+  const handleImageChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    setFormData((current) => ({
+      ...current,
+      images: [...current.images, ...files],
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleRemoveImage = (index) => {
+    setFormData((current) => ({
+      ...current,
+      images: current.images.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const handleLocationSelect = (coordinates) => {
+    setFormData((current) => ({
+      ...current,
+      latitude: coordinates.lat.toFixed(6),
+      longitude: coordinates.lng.toFixed(6),
+    }));
+  };
+
+  const changeCapacity = (delta) => {
+    setFormData((current) => ({
+      ...current,
+      maxPeople: Math.max(1, Number(current.maxPeople || 1) + delta),
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
     try {
       const form = new FormData();
 
-      form.append("title", formData.title);
-      form.append("description_en", formData.description_en);
-      form.append("description_ar", formData.description_ar);
-      form.append("price", Number(formData.price));
-      form.append("city", formData.city);
-      form.append("district", formData.district);
-      form.append("address", formData.address);
-      form.append("buildingNumber", formData.buildingNumber);
-      form.append("unitNumber", formData.unitNumber);
-      form.append("apartmentType", formData.apartmentType);
-      form.append("beds", Number(formData.beds));
-      form.append("rooms", Number(formData.rooms));
-      form.append("bathrooms", formData.bathrooms ? Number(formData.bathrooms) : "");
-      form.append("floor", formData.floor ? Number(formData.floor) : "");
-      form.append("latitude", formData.latitude);
-      form.append("longitude", formData.longitude);
-      form.append("amenities", formData.amenities);
+      form.append('title', formData.title);
+      form.append('description_en', formData.description_en);
+      form.append('price', Number(formData.price));
+      form.append('city', formData.city);
+      form.append('district', formData.district);
+      form.append('address', formData.address);
+      form.append('apartmentType', formData.apartmentType);
+      form.append('beds', Number(formData.beds));
+      form.append('rooms', Number(formData.rooms));
+      form.append('bathrooms', formData.bathrooms ? Number(formData.bathrooms) : '');
+      form.append('floor', formData.floor ? Number(formData.floor) : '');
+      form.append('latitude', formData.latitude);
+      form.append('longitude', formData.longitude);
+      form.append('amenities', formData.amenities);
+      form.append('max_people', Number(formData.maxPeople));
+      form.append('available_people', Number(formData.maxPeople));
 
-      // الصور
-      formData.images.forEach((img) => {
-      form.append("images", img);
+      formData.images.forEach((image) => {
+        form.append('images', image);
       });
 
       if (formData.video) {
-      form.append("video", formData.video);
+        form.append('video', formData.video);
       }
 
       await apartmentsAPI.createApartment(form);
@@ -83,26 +101,12 @@ export const AddApartment = () => {
       setSuccessMessage('Apartment added successfully! It will be reviewed before publishing.');
       setTimeout(() => {
         navigate('/my-apartment');
-      }, 2000);
-    } catch (err) {
-      const errData = err.response?.data;
-      // Handle validation errors (422)
-      if (errData?.errors) {
-        const messages = errData.errors.map(e => `${e.path || e.param}: ${e.msg}`).join(', ');
-        setError(messages);
-      } else {
-        setError(errData?.message || 'Failed to add apartment. Please try again.');
-      }
+      }, 1800);
+    } catch (requestError) {
+      setError(requestError?.message || requestError.response?.data?.message || 'Failed to add apartment. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRemoveImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
   };
 
   return (
@@ -110,13 +114,11 @@ export const AddApartment = () => {
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-primary mb-2">Add New Apartment</h1>
           <p className="text-gray-600">Fill in all the details to list your apartment</p>
         </div>
 
-        {/* Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             {error}
@@ -130,7 +132,6 @@ export const AddApartment = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Information */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Basic Information</h2>
 
@@ -163,7 +164,6 @@ export const AddApartment = () => {
             </div>
           </div>
 
-          {/* Location */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Location</h2>
 
@@ -174,16 +174,13 @@ export const AddApartment = () => {
                   type="text"
                   name="city"
                   value="Asyut"
-                  onChange={handleChange}                  
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg  bg-gray-100 text-gray-600 cursor-not-allowed"
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  District *
-                </label>
-
+                <label className="block text-gray-700 font-semibold mb-2">District *</label>
                 <select
                   name="district"
                   value={formData.district}
@@ -192,11 +189,10 @@ export const AddApartment = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Select District</option>
-                  <option value="Feryal">Feryal</option>
-                  <option value="Sayed">Sayed</option>
-                  <option value="Qulta">Qulta</option>
-                  <option value="City">City</option>
-                  <option value="El Gomhoria">El Gomhoria</option>
+                  <option value="فريال">فريال</option>
+                  <option value="سيد">سيد</option>
+                  <option value="الجمهورية">الجمهورية</option>
+                  <option value="يسري راغب">يسري راغب</option>
                 </select>
               </div>
 
@@ -213,36 +209,69 @@ export const AddApartment = () => {
               </div>
             </div>
 
-            {/* Coordinates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Latitude</label>
-                <input
-                  type="text"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="30.0444"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Longitude</label>
-                <input
-                  type="text"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="31.2357"
-                />
+            <div className="mt-6 rounded-2xl border border-dashed border-primary/30 bg-slate-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Apartment location</p>
+                  <h3 className="mt-1 text-lg font-bold text-primary">Pick the exact map point</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {formData.latitude && formData.longitude
+                      ? `Selected coordinates: ${formData.latitude}, ${formData.longitude}`
+                      : 'No coordinates selected yet.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLocationPickerOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#245999] px-4 py-3 font-semibold text-white transition hover:bg-[#1f4f86]"
+                >
+                  <i className="fa-brands fa-google"></i>
+                  Choose on map
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Room Details */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Room Details</h2>
+
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Apartment Capacity
+                  </p>
+                  <h3 className="mt-1 text-2xl font-black text-primary">
+                    {formData.maxPeople} People
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    This will be used later for occupancy progress like 2/6 occupied.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => changeCapacity(-1)}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-black text-slate-700 transition hover:bg-slate-100"
+                  >
+                    -
+                  </button>
+                  <div className="min-w-24 rounded-2xl bg-white px-5 py-3 text-center shadow-sm">
+                    <span className="block text-sm font-semibold text-slate-500">Capacity</span>
+                    <span className="block text-2xl font-black text-slate-900">{formData.maxPeople}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => changeCapacity(1)}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-black text-slate-700 transition hover:bg-slate-100"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
@@ -295,10 +324,8 @@ export const AddApartment = () => {
                 />
               </div>
             </div>
-
           </div>
 
-          {/* Media */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Photos</h2>
 
@@ -319,7 +346,6 @@ export const AddApartment = () => {
                 </label>
               </div>
 
-              {/* Image Previews */}
               {formData.images.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                   {formData.images.map((file, index) => {
@@ -327,19 +353,14 @@ export const AddApartment = () => {
 
                     return (
                       <div key={index} className="relative group rounded-lg overflow-hidden h-32">
-                        <img src={url} className="w-full h-full object-cover" />
+                        <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              images: prev.images.filter((_, i) => i !== index),
-                            }));
-                          }}
+                          onClick={() => handleRemoveImage(index)}
                           className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full"
                         >
-                          ✕
+                          ×
                         </button>
                       </div>
                     );
@@ -349,15 +370,14 @@ export const AddApartment = () => {
             </div>
           </div>
 
-          {/* Video Upload */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Video</h2>
 
             <input
               type="file"
               accept="video/*"
-              onChange={(e) =>
-                setFormData({ ...formData, video: e.target.files[0] })
+              onChange={(event) =>
+                setFormData({ ...formData, video: event.target.files[0] })
               }
             />
 
@@ -370,7 +390,6 @@ export const AddApartment = () => {
             )}
           </div>
 
-          {/* Description */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Description</h2>
 
@@ -385,12 +404,11 @@ export const AddApartment = () => {
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Describe your apartment in English..."
-                ></textarea>
+                />
               </div>
             </div>
           </div>
 
-          {/* Submit */}
           <div className="flex gap-4">
             <button
               type="button"
@@ -409,6 +427,22 @@ export const AddApartment = () => {
           </div>
         </form>
       </div>
+
+      {isLocationPickerOpen && (
+        <LocationPickerModal
+          open={isLocationPickerOpen}
+          initialCoordinates={
+            formData.latitude && formData.longitude
+              ? {
+                  lat: Number(formData.latitude),
+                  lng: Number(formData.longitude),
+                }
+              : undefined
+          }
+          onClose={() => setIsLocationPickerOpen(false)}
+          onSelect={handleLocationSelect}
+        />
+      )}
     </div>
   );
 };

@@ -1,218 +1,226 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { bookingsAPI } from '../services/api';
+import { useStoreVersion } from '../hooks/useStoreVersion';
+
+const statusStyles = {
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
+  declined: 'bg-rose-100 text-rose-700',
+  cancelled: 'bg-slate-100 text-slate-600',
+  completed: 'bg-blue-100 text-blue-700',
+};
 
 export const BookingRequests = () => {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const storeVersion = useStoreVersion();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBookingRequests();
-  }, []);
+    const loadRequests = async () => {
+      setLoading(true);
 
-  const fetchBookingRequests = async () => {
-    setLoading(true);
-    try {
-      const response = await bookingsAPI.getMyBookings();
-      const resData = response.data;
-      const bookingList = Array.isArray(resData) ? resData : (resData?.bookings || []);
-      setBookings(bookingList);
-    } catch (error) {
-      console.error('Error fetching booking requests:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const response = await bookingsAPI.getOwnerBookings();
+        const data = response.data;
+        setBookings(Array.isArray(data) ? data : (data?.bookings || []));
+      } catch (error) {
+        console.error('Error fetching booking requests:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, [storeVersion]);
+
+  const totals = useMemo(() => ({
+    total: bookings.length,
+    pending: bookings.filter((booking) => booking.status === 'pending').length,
+    approved: bookings.filter((booking) => booking.status === 'approved').length,
+  }), [bookings]);
 
   const updateBookingStatus = async (id, action) => {
     try {
       if (action === 'approved') {
         await bookingsAPI.acceptBooking(id);
-      } else {
+      } else if (action === 'declined') {
         await bookingsAPI.rejectBooking(id);
       }
-
-      setBookings((currentBookings) => currentBookings.map((booking) => (
-        booking._id === id ? { ...booking, status: action } : booking
-      )));
     } catch (error) {
       console.error('Error updating booking request:', error);
     }
   };
 
-  const statusStyles = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    approved: 'bg-green-100 text-green-700',
-    declined: 'bg-red-100 text-red-700',
-  };
-
   return (
-    <div className="w-full min-h-screen bg-[#f6f7fb]">
+    <div className="min-h-screen bg-[#f6f7fb]">
       <Navbar />
 
       <div className="px-4 pt-8">
-        <div className="max-w-7xl mx-auto rounded-[28px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] px-6 py-8 md:px-8">
+        <div className="mx-auto max-w-7xl rounded-[32px] border border-slate-200 bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:px-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Owner workspace
               </div>
-              <h2 className="mt-4 text-4xl font-bold text-slate-900">Booking Requests</h2>
+              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-900">
+                Booking Requests
+              </h1>
               <p className="mt-2 max-w-2xl text-slate-600">
-                Review student requests and approve or decline apartment bookings
+                Review requests and approve or reject them from one place.
               </p>
             </div>
+
             <button
+              type="button"
               onClick={() => navigate('/my-apartment')}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3 font-bold text-white transition hover:bg-slate-800"
+              className="rounded-full bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
             >
-              <i className="fas fa-building"></i>
-              <span>My Apartments</span>
+              My apartments
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-primary">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-semibold">Total Requests</p>
-                <p className="text-3xl font-bold text-primary">{bookings.length}</p>
-              </div>
-              <i className="fas fa-calendar-check text-4xl text-primary opacity-20"></i>
-            </div>
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-[24px] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Total Requests</p>
+            <p className="mt-2 text-4xl font-black text-slate-900">{totals.total}</p>
           </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-secondary">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-semibold">Pending Requests</p>
-                <p className="text-3xl font-bold text-secondary">
-                  {bookings.filter((booking) => booking.status === 'pending').length}
-                </p>
-              </div>
-              <i className="fas fa-clock text-4xl text-secondary opacity-20"></i>
-            </div>
+          <div className="rounded-[24px] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Pending Requests</p>
+            <p className="mt-2 text-4xl font-black text-amber-600">{totals.pending}</p>
           </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-accent">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-semibold">Approved</p>
-                <p className="text-3xl font-bold text-accent">
-                  {bookings.filter((booking) => booking.status === 'approved').length}
-                </p>
-              </div>
-              <i className="fas fa-check-circle text-4xl text-accent opacity-20"></i>
-            </div>
+          <div className="rounded-[24px] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Approved</p>
+            <p className="mt-2 text-4xl font-black text-emerald-600">{totals.approved}</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h3 className="text-2xl font-bold mb-6 text-primary">Student Requests</h3>
+      <div className="mx-auto max-w-7xl px-4 pb-8">
+        <h2 className="mb-6 text-2xl font-black text-slate-900">Student Requests</h2>
 
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading booking requests...</p>
+          <div className="rounded-[28px] bg-white py-16 text-center text-slate-500 shadow-sm">
+            Loading booking requests...
           </div>
         ) : bookings.length > 0 ? (
           <div className="space-y-6">
-            {bookings.map((booking) => (
-              <div
-                key={booking._id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
-              >
-                <div className="flex flex-col md:flex-row">
-                  <div className="md:w-48 h-40 md:h-auto bg-gray-300">
-                    <img
-                      src={booking.apartment?.images?.[0] || 'https://via.placeholder.com/200x150'}
-                      alt={booking.apartment?.title || booking.apartment?.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+            {bookings.map((booking) => {
+              const statusStyle = statusStyles[booking.status] || statusStyles.pending;
 
-                  <div className="flex-1 p-6 flex flex-col lg:flex-row justify-between gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-start gap-4 mb-4">
-                        <img
-                          src={booking.student?.avatar || 'https://via.placeholder.com/64'}
-                          alt={booking.student?.fullName}
-                          className="w-14 h-14 rounded-full object-cover"
-                        />
-                        <div>
-                          <h4 className="font-bold text-xl text-primary">{booking.student?.fullName}</h4>
-                          <p className="text-gray-600 text-sm">
-                            {booking.student?.faculty} - {booking.student?.university}
-                          </p>
-                          <p className="text-gray-600 text-sm">
-                            <i className="fas fa-phone mr-2 text-primary"></i>{booking.student?.phone}
-                          </p>
-                        </div>
-                      </div>
-
-                      <h5 className="font-bold text-lg text-primary mb-2">
-                        {booking.apartment?.title || booking.apartment?.name}
-                      </h5>
-                      <p className="text-gray-600 mb-2">
-                        <i className="fas fa-map-marker-alt mr-2 text-primary"></i>
-                        {booking.apartment?.district}, {booking.apartment?.city}
-                      </p>
-                      <p className="text-gray-600 mb-4">{booking.message}</p>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-700">
-                        <span><i className="fas fa-calendar-day mr-1 text-primary"></i>From {booking.checkInDate}</span>
-                        <span><i className="fas fa-calendar-week mr-1 text-primary"></i>To {booking.checkOutDate}</span>
-                        <span><i className="fas fa-money-bill-wave mr-1 text-primary"></i>${booking.apartment?.price}/mo</span>
-                        <span><i className="fas fa-bed mr-1 text-primary"></i>{booking.apartment?.beds} Beds</span>
-                        <span><i className="fas fa-door-open mr-1 text-primary"></i>{booking.apartment?.rooms} Rooms</span>
-                        <span><i className="fas fa-clock mr-1 text-primary"></i>{new Date(booking.createdAt).toLocaleDateString()}</span>
-                      </div>
+              return (
+                <div key={booking._id} className="overflow-hidden rounded-[28px] bg-white shadow-sm">
+                  <div className="grid gap-0 md:grid-cols-[260px_1fr]">
+                    <div className="h-56 bg-slate-200 md:h-full">
+                      <img
+                        src={booking.apartment?.images?.[0] || 'https://via.placeholder.com/400x300'}
+                        alt={booking.apartment?.title || booking.apartment?.name}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
 
-                    <div className="text-right min-w-[170px]">
-                      <div className="mb-4">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[booking.status] || statusStyles.pending}`}>
-                          {booking.status}
-                        </span>
-                      </div>
+                    <div className="p-6">
+                      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="max-w-3xl">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-2xl font-black text-slate-900">
+                              {booking.student?.fullName}
+                            </h3>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusStyle}`}>
+                              {booking.status}
+                            </span>
+                          </div>
 
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => navigate(`/apartment/${booking.apartment?._id}`)}
-                          className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition text-sm"
-                        >
-                          <i className="fas fa-eye mr-2"></i>View Apartment
-                        </button>
-                        <button
-                          onClick={() => updateBookingStatus(booking._id, 'approved')}
-                          disabled={booking.status !== 'pending'}
-                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <i className="fas fa-check mr-2"></i>Approve
-                        </button>
-                        <button
-                          onClick={() => updateBookingStatus(booking._id, 'declined')}
-                          disabled={booking.status !== 'pending'}
-                          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <i className="fas fa-times mr-2"></i>Decline
-                        </button>
+                          <p className="mt-2 text-slate-500">
+                            {booking.student?.faculty} - {booking.student?.university}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            <i className="fas fa-phone mr-2 text-[#245999]"></i>
+                            {booking.student?.phone}
+                          </p>
+
+                          <h4 className="mt-5 text-xl font-black text-slate-900">
+                            {booking.apartment?.title || booking.apartment?.name}
+                          </h4>
+                          <p className="mt-2 text-slate-500">
+                            <i className="fas fa-location-dot mr-2 text-[#245999]"></i>
+                            {booking.apartment?.district}, {booking.apartment?.city}
+                          </p>
+                          <p className="mt-3 max-w-2xl text-slate-600">{booking.message}</p>
+
+                          <div className="mt-5 grid gap-3 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Check in</span>
+                              <span className="mt-1 block font-semibold text-slate-900">{booking.checkInDate}</span>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Check out</span>
+                              <span className="mt-1 block font-semibold text-slate-900">{booking.checkOutDate}</span>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Requested occupants</span>
+                              <span className="mt-1 block font-semibold text-slate-900">{booking.requestedOccupants || 1}</span>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Apartment price</span>
+                              <span className="mt-1 block font-semibold text-slate-900">${booking.apartment?.price}/mo</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="min-w-[180px]">
+                          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Submitted</p>
+                            <p className="mt-1 font-semibold text-slate-900">
+                              {new Date(booking.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+
+                          <div className="mt-4 flex flex-col gap-3">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/apartment/${booking.apartment?._id}`)}
+                              className="rounded-2xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-800"
+                            >
+                              View apartment
+                            </button>
+
+                            {booking.status === 'pending' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => updateBookingStatus(booking._id, 'approved')}
+                                  className="rounded-2xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateBookingStatus(booking._id, 'declined')}
+                                  className="rounded-2xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700"
+                                >
+                                  Decline
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <i className="fas fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
-            <p className="text-gray-600 text-lg">No booking requests yet</p>
+          <div className="rounded-[28px] bg-white py-20 text-center shadow-sm">
+            <i className="fas fa-calendar-xmark text-6xl text-slate-300 mb-5"></i>
+            <p className="text-lg font-bold text-slate-900">No booking requests yet</p>
           </div>
         )}
       </div>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { apartmentsAPI } from '../services/api';
+import { LocationPickerModal } from '../components/LocationPickerModal';
 
 export const EditApartment = () => {
   const { id } = useParams();
@@ -24,110 +25,128 @@ export const EditApartment = () => {
     amenities: '',
     latitude: '',
     longitude: '',
+    maxPeople: 4,
     availability: 'available',
-    images: [],
+    video: null,
   });
-  const [preview, setPreview] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+
+  async function fetchApartmentDetails() {
+    try {
+      const response = await apartmentsAPI.getApartment(id);
+      const apartment = response.data?.apartment || response.data;
+
+      setFormData({
+        title: apartment?.title || apartment?.name || '',
+        description_en: apartment?.description_en || apartment?.description || '',
+        description_ar: apartment?.description_ar || '',
+        price: apartment?.price || '',
+        city: apartment?.city || '',
+        district: apartment?.district || '',
+        address: apartment?.address || '',
+        buildingNumber: apartment?.buildingNumber || '',
+        unitNumber: apartment?.unitNumber || '',
+        apartmentType: apartment?.apartmentType || 'apartment',
+        beds: apartment?.beds || '',
+        rooms: apartment?.rooms || '',
+        bathrooms: apartment?.bathrooms || '',
+        floor: apartment?.floor || '',
+        amenities: Array.isArray(apartment?.amenities)
+          ? apartment.amenities.join(',')
+          : (apartment?.amenities || ''),
+        latitude: apartment?.latitude || apartment?.location?.coordinates?.[1] || '',
+        longitude: apartment?.longitude || apartment?.location?.coordinates?.[0] || '',
+        maxPeople: apartment?.max_people ?? apartment?.capacity ?? 4,
+        availability: apartment?.availability || 'available',
+        video: null,
+      });
+
+      setExistingImages(apartment?.images || []);
+    } catch (requestError) {
+      setError('Failed to load apartment details');
+      console.error('Error fetching apartment:', requestError);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     fetchApartmentDetails();
   }, [id]);
 
-  const fetchApartmentDetails = async () => {
-    try {
-      const response = await apartmentsAPI.getApartment(id);
-      // Handle both nested and flat response
-      const apartment = response.data?.apartment || response.data;
-      setFormData({
-        title: apartment.title || apartment.name || '',
-        description_en: apartment.description_en || apartment.description || '',
-        description_ar: apartment.description_ar || '',
-        price: apartment.price || '',
-        city: apartment.city || '',
-        district: apartment.district || '',
-        address: apartment.address || '',
-        buildingNumber: apartment.buildingNumber || '',
-        unitNumber: apartment.unitNumber || '',
-        apartmentType: apartment.apartmentType || 'apartment',
-        beds: apartment.beds || '',
-        rooms: apartment.rooms || '',
-        bathrooms: apartment.bathrooms || '',
-        floor: apartment.floor || '',
-        amenities: Array.isArray(apartment.amenities) ? apartment.amenities.join(',') : (apartment.amenities || ''),
-        latitude: apartment.latitude || apartment.location?.coordinates?.[1] || '',
-        longitude: apartment.longitude || apartment.location?.coordinates?.[0] || '',
-        availability: apartment.availability || 'available',
-        images: [],
-      });
-      setExistingImages(apartment.images || []);
-    } catch (error) {
-      setError('Failed to load apartment details');
-      console.error('Error fetching apartment:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleImageChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    setNewImages((current) => [...current, ...files]);
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setNewImages((prev) => [...prev, ...files]);
+  const handleLocationSelect = (coordinates) => {
+    setFormData((current) => ({
+      ...current,
+      latitude: coordinates.lat.toFixed(6),
+      longitude: coordinates.lng.toFixed(6),
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const changeCapacity = (delta) => {
+    setFormData((current) => ({
+      ...current,
+      maxPeople: Math.max(1, Number(current.maxPeople || 1) + delta),
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
 
     try {
       const form = new FormData();
 
-      form.append("title", formData.title);
-      form.append("description_en", formData.description_en);
-      form.append("description_ar", formData.description_ar);
-      form.append("price", Number(formData.price));
-      form.append("city", formData.city);
-      form.append("district", formData.district);
-      form.append("address", formData.address);
-      form.append("buildingNumber", formData.buildingNumber);
-      form.append("unitNumber", formData.unitNumber);
-      form.append("apartmentType", formData.apartmentType);
-      form.append("beds", Number(formData.beds));
-      form.append("rooms", Number(formData.rooms));
-      form.append("bathrooms", formData.bathrooms ? Number(formData.bathrooms) : "");
-      form.append("floor", formData.floor ? Number(formData.floor) : "");
-      form.append("latitude", formData.latitude);
-      form.append("longitude", formData.longitude);
-      form.append("amenities", formData.amenities);
-      form.append("availability", formData.availability);
+      form.append('title', formData.title);
+      form.append('description_en', formData.description_en);
+      form.append('description_ar', formData.description_ar);
+      form.append('price', Number(formData.price));
+      form.append('city', formData.city);
+      form.append('district', formData.district);
+      form.append('address', formData.address);
+      form.append('buildingNumber', formData.buildingNumber);
+      form.append('unitNumber', formData.unitNumber);
+      form.append('apartmentType', formData.apartmentType);
+      form.append('beds', Number(formData.beds));
+      form.append('rooms', Number(formData.rooms));
+      form.append('bathrooms', formData.bathrooms ? Number(formData.bathrooms) : '');
+      form.append('floor', formData.floor ? Number(formData.floor) : '');
+      form.append('latitude', formData.latitude);
+      form.append('longitude', formData.longitude);
+      form.append('amenities', formData.amenities);
+      form.append('availability', formData.availability);
+      form.append('max_people', Number(formData.maxPeople));
 
-      // new images only
-      newImages.forEach((img) => {
-        form.append("images", img);
+      newImages.forEach((image) => {
+        form.append('images', image);
       });
 
+      if (formData.video) {
+        form.append('video', formData.video);
+      }
+
       await apartmentsAPI.updateApartment(id, form);
-      
+
       setSuccessMessage('Apartment updated successfully!');
       setTimeout(() => {
         navigate('/my-apartment');
-      }, 2000);
-    } catch (err) {
-      const errData = err.response?.data;
-      if (errData?.errors) {
-        const messages = errData.errors.map(e => `${e.path || e.param}: ${e.msg}`).join(', ');
-        setError(messages);
-      } else {
-        setError(errData?.message || 'Failed to update apartment. Please try again.');
-      }
+      }, 1800);
+    } catch (requestError) {
+      setError(requestError?.message || requestError.response?.data?.message || 'Failed to update apartment. Please try again.');
     }
   };
 
@@ -147,13 +166,11 @@ export const EditApartment = () => {
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-primary mb-2">Edit Apartment</h1>
           <p className="text-gray-600">Update your apartment details</p>
         </div>
 
-        {/* Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             {error}
@@ -167,7 +184,6 @@ export const EditApartment = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Information */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Basic Information</h2>
 
@@ -200,7 +216,6 @@ export const EditApartment = () => {
             </div>
           </div>
 
-          {/* Location */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Location</h2>
 
@@ -211,16 +226,13 @@ export const EditApartment = () => {
                   type="text"
                   name="city"
                   value="Asyut"
-                  onChange={handleChange}                  
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg  bg-gray-100 text-gray-600 cursor-not-allowed"
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  District *
-                </label>
-
+                <label className="block text-gray-700 font-semibold mb-2">District *</label>
                 <select
                   name="district"
                   value={formData.district}
@@ -229,11 +241,10 @@ export const EditApartment = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">Select District</option>
-                  <option value="Feryal">Feryal</option>
-                  <option value="Sayed">Sayed</option>
-                  <option value="Qulta">Qulta</option>
-                  <option value="City">City</option>
-                  <option value="El Gomhoria">El Gomhoria</option>
+                  <option value="فريال">فريال</option>
+                  <option value="سيد">سيد</option>
+                  <option value="الجمهورية">الجمهورية</option>
+                  <option value="يسري راغب">يسري راغب</option>
                 </select>
               </div>
 
@@ -250,36 +261,69 @@ export const EditApartment = () => {
               </div>
             </div>
 
-            {/* Coordinates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Latitude</label>
-                <input
-                  type="text"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="30.0444"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Longitude</label>
-                <input
-                  type="text"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="31.2357"
-                />
+            <div className="mt-6 rounded-2xl border border-dashed border-primary/30 bg-slate-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Apartment location</p>
+                  <h3 className="mt-1 text-lg font-bold text-primary">Adjust the pin on the map</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {formData.latitude && formData.longitude
+                      ? `Selected coordinates: ${formData.latitude}, ${formData.longitude}`
+                      : 'No coordinates selected yet.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLocationPickerOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#245999] px-4 py-3 font-semibold text-white transition hover:bg-[#1f4f86]"
+                >
+                  <i className="fa-brands fa-google"></i>
+                  Choose on map
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Room Details */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Room Details</h2>
+
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Apartment Capacity
+                  </p>
+                  <h3 className="mt-1 text-2xl font-black text-primary">
+                    {formData.maxPeople} People
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Keep this aligned with the real occupancy limit for the unit.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => changeCapacity(-1)}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-black text-slate-700 transition hover:bg-slate-100"
+                  >
+                    -
+                  </button>
+                  <div className="min-w-24 rounded-2xl bg-white px-5 py-3 text-center shadow-sm">
+                    <span className="block text-sm font-semibold text-slate-500">Capacity</span>
+                    <span className="block text-2xl font-black text-slate-900">{formData.maxPeople}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => changeCapacity(1)}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-black text-slate-700 transition hover:bg-slate-100"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
@@ -332,77 +376,68 @@ export const EditApartment = () => {
                 />
               </div>
             </div>
-
           </div>
 
-          {/* Media */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Photos</h2>
 
-            <div>
-              <div className="border-2 border-dashed border-primary rounded-lg p-8 text-center cursor-pointer hover:bg-blue-50 transition">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/jpg,image/jpeg,image/png,image/webp"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="images"
-                />
-                <label htmlFor="images" className="cursor-pointer">
-                  <i className="fas fa-cloud-upload-alt text-4xl text-primary mb-4"></i>
-                  <p className="text-gray-700 font-semibold">Click to upload or drag and drop</p>
-                  <p className="text-gray-500 text-sm">JPG, JPEG, PNG, WebP up to 10MB</p>
-                </label>
-              </div>
-
-              {/* Existing Images */}
-              {existingImages.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 mt-6">
-                  {existingImages.map((img, index) => (
-                    <div key={index} className="relative rounded-lg overflow-hidden h-32">
-                      <img src={img} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Image Previews */}
-              {newImages.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  {newImages.map((file, index) => {
-                    const url = URL.createObjectURL(file);
-
-                    return (
-                      <div key={index} className="relative group rounded-lg overflow-hidden h-32">
-                        <img src={url} className="w-full h-full object-cover" />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setNewImages(prev => prev.filter((_, i) => i !== index))
-                          }
-                          className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div className="border-2 border-dashed border-primary rounded-lg p-8 text-center cursor-pointer hover:bg-blue-50 transition">
+              <input
+                type="file"
+                multiple
+                accept="image/jpg,image/jpeg,image/png,image/webp"
+                onChange={handleImageChange}
+                className="hidden"
+                id="images"
+              />
+              <label htmlFor="images" className="cursor-pointer">
+                <i className="fas fa-cloud-upload-alt text-4xl text-primary mb-4"></i>
+                <p className="text-gray-700 font-semibold">Click to upload or drag and drop</p>
+                <p className="text-gray-500 text-sm">JPG, JPEG, PNG, WebP up to 10MB</p>
+              </label>
             </div>
+
+            {existingImages.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 mt-6">
+                {existingImages.map((image, index) => (
+                  <div key={index} className="relative rounded-lg overflow-hidden h-32">
+                    <img src={image} alt={`Existing ${index + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {newImages.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                {newImages.map((file, index) => {
+                  const url = URL.createObjectURL(file);
+
+                  return (
+                    <div key={index} className="relative group rounded-lg overflow-hidden h-32">
+                      <img src={url} alt={`New ${index + 1}`} className="w-full h-full object-cover" />
+
+                      <button
+                        type="button"
+                        onClick={() => setNewImages((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                        className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Video Upload */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Video</h2>
 
             <input
               type="file"
               accept="video/*"
-              onChange={(e) =>
-                setFormData({ ...formData, video: e.target.files[0] })
+              onChange={(event) =>
+                setFormData({ ...formData, video: event.target.files[0] })
               }
             />
 
@@ -415,7 +450,6 @@ export const EditApartment = () => {
             )}
           </div>
 
-          {/* Description */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-primary mb-6">Description</h2>
 
@@ -430,12 +464,11 @@ export const EditApartment = () => {
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Describe your apartment in English..."
-                ></textarea>
+                />
               </div>
             </div>
           </div>
 
-          {/* Submit */}
           <div className="flex gap-4">
             <button
               type="button"
@@ -454,6 +487,22 @@ export const EditApartment = () => {
           </div>
         </form>
       </div>
+
+      {isLocationPickerOpen && (
+        <LocationPickerModal
+          open={isLocationPickerOpen}
+          initialCoordinates={
+            formData.latitude && formData.longitude
+              ? {
+                  lat: Number(formData.latitude),
+                  lng: Number(formData.longitude),
+                }
+              : undefined
+          }
+          onClose={() => setIsLocationPickerOpen(false)}
+          onSelect={handleLocationSelect}
+        />
+      )}
     </div>
   );
 };

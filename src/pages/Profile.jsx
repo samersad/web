@@ -71,7 +71,7 @@ export const Profile = () => {
       setIsEditing(false);
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to update profile');
+      setMessage(error?.message || error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -182,7 +182,7 @@ return (
 
             <>
               <h2 className="text-2xl font-bold mb-8">
-                Student Information
+                Account Information
               </h2>
 
               <div className="space-y-6">

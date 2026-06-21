@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
+    "@supabase/supabase-js": "^2.108.2",
     "autoprefixer": "^10.5.0",
     "axios": "^1.18.0",
     "postcss": "^8.5.15",

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '../components/Navbar';
 import { apartmentsAPI } from '../services/api';
 import { ApartmentCard } from '../components/ApartmentCard';
+import { useStoreVersion } from '../hooks/useStoreVersion';
 
 export const Search = () => {
   const [apartments, setApartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const storeVersion = useStoreVersion();
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
@@ -46,7 +48,7 @@ export const Search = () => {
 
     return () => clearTimeout(delaySearch);
 
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, storeVersion]);
 
   return (
   <div className="min-h-screen bg-gray-100">

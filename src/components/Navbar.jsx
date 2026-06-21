@@ -32,16 +32,28 @@ export const Navbar = () => {
               <i className="fas fa-home mr-2"></i>Home
             </Link>
             <Link
+              to="/universities"
+              className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition"
+            >
+              <i className="fas fa-university mr-2"></i>Universities
+            </Link>
+            <Link
               to="/search"
               className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition"
             >
               <i className="fas fa-search mr-2"></i>Search
             </Link>
             <Link
+              to="/notifications"
+              className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition"
+            >
+              <i className="fas fa-bell mr-2"></i>Notifications
+            </Link>
+            <Link
               to="/messages"
               className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition"
             >
-              <i className="fas fa-envelope mr-2"></i>Messages
+              <i className="fas fa-comments mr-2"></i>Messages
             </Link>
             {user?.role === 'owner' && (
               <Link
@@ -142,6 +154,13 @@ export const Navbar = () => {
             <i className="fas fa-home mr-2"></i>Home
           </Link>
           <Link
+            to="/universities"
+            className="block px-4 py-2 text-gray-700 hover:text-primary transition"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <i className="fas fa-university mr-2"></i>Universities
+          </Link>
+          <Link
             to="/search"
             className="block px-4 py-2 text-gray-700 hover:text-primary transition"
             onClick={() => setMobileMenuOpen(false)}
@@ -149,11 +168,18 @@ export const Navbar = () => {
             <i className="fas fa-search mr-2"></i>Search
           </Link>
           <Link
+            to="/notifications"
+            className="block px-4 py-2 text-gray-700 hover:text-primary transition"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <i className="fas fa-bell mr-2"></i>Notifications
+          </Link>
+          <Link
             to="/messages"
             className="block px-4 py-2 text-gray-700 hover:text-primary transition"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <i className="fas fa-envelope mr-2"></i>Messages
+            <i className="fas fa-comments mr-2"></i>Messages
           </Link>
           {user?.role === 'owner' && (
             <Link

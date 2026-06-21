@@ -1,225 +1,232 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { apartmentsAPI } from '../services/api';
+import { useStoreVersion } from '../hooks/useStoreVersion';
 
 export const MyApartment = () => {
-  const [apartments, setApartments] = useState([]);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const storeVersion = useStoreVersion();
+  const [apartments, setApartments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMyApartments();
-  }, []);
+    const loadApartments = async () => {
+      setLoading(true);
 
-  const fetchMyApartments = async () => {
-    setLoading(true);
-    try {
-      const response = await apartmentsAPI.getMyApartments();
-      const resData = response.data;
-      const apartmentList = Array.isArray(resData) ? resData : (resData?.apartments || []);
-      setApartments(apartmentList);
-    } catch (error) {
-      console.error('Error fetching apartments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const response = await apartmentsAPI.getMyApartments();
+        const data = response.data;
+        setApartments(Array.isArray(data) ? data : (data?.apartments || []));
+      } catch (error) {
+        console.error('Error fetching apartments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadApartments();
+  }, [storeVersion]);
+
+  const stats = useMemo(() => ({
+    total: apartments.length,
+    pending: apartments.filter((apartment) => apartment.status === 'pending_approval').length,
+    approved: apartments.filter((apartment) => apartment.status === 'approved').length,
+  }), [apartments]);
 
   const handleDeleteApartment = async (id) => {
     const shouldDelete = window.confirm('Are you sure you want to delete this apartment?');
-    if (!shouldDelete) return;
+    if (!shouldDelete) {
+      return;
+    }
 
     try {
       await apartmentsAPI.deleteApartment(id);
-      setApartments((currentApartments) => currentApartments.filter((apartment) => apartment._id !== id));
     } catch (error) {
       console.error('Error deleting apartment:', error);
     }
   };
 
   return (
-      <div className="w-full min-h-screen bg-[#f6f7fb]">
-        <Navbar />
+    <div className="min-h-screen bg-[#f6f7fb]">
+      <Navbar />
 
-        {/* Hero Section with Add Button */}
-        <div className="px-4 pt-8">
-          <div className="max-w-7xl mx-auto rounded-[28px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] px-6 py-8 md:px-8">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  Owner workspace
-                </div>
-                <h2 className="mt-4 text-4xl font-bold text-slate-900">My Apartments</h2>
-                <p className="mt-2 max-w-2xl text-slate-600">
-                  View details, edit, or delete your listed apartments
-                </p>
+      <div className="px-4 pt-8">
+        <div className="mx-auto max-w-7xl rounded-[32px] border border-slate-200 bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:px-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Owner workspace
               </div>
-              <button
-                onClick={() => navigate('/add-apartment')}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3 font-bold text-white transition hover:bg-slate-800"
-              >
-                <i className="fas fa-plus"></i>
-                <span>Add Apartment</span>
-              </button>
+              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-900">
+                My Apartments
+              </h1>
+              <p className="mt-2 max-w-2xl text-slate-600">
+                Manage your listings, view occupancy, and edit the apartment media or location.
+              </p>
             </div>
-          </div>
-        </div>
 
-      {/* Statistics */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-primary">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-semibold">Total Apartments</p>
-                <p className="text-3xl font-bold text-primary">{apartments.length}</p>
-              </div>
-              <i className="fas fa-building text-4xl text-primary opacity-20"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-secondary">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-semibold">Pending Approval</p>
-                <p className="text-3xl font-bold text-secondary">
-                  {apartments.filter(a => a.status === 'pending_approval').length}
-                </p>
-              </div>
-              <i className="fas fa-clock text-4xl text-secondary opacity-20"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-accent">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-semibold">Active Listings</p>
-                <p className="text-3xl font-bold text-accent">
-                  {apartments.filter(a => a.status === 'approved').length}
-                </p>
-              </div>
-              <i className="fas fa-check-circle text-4xl text-accent opacity-20"></i>
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/add-apartment')}
+              className="rounded-full bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
+            >
+              Add apartment
+            </button>
           </div>
         </div>
       </div>
 
-      {/* My Apartments */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h3 className="text-2xl font-bold mb-6 text-primary">My Apartments</h3>
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-[24px] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Total Apartments</p>
+            <p className="mt-2 text-4xl font-black text-slate-900">{stats.total}</p>
+          </div>
+          <div className="rounded-[24px] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Pending Approval</p>
+            <p className="mt-2 text-4xl font-black text-amber-600">{stats.pending}</p>
+          </div>
+          <div className="rounded-[24px] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Active Listings</p>
+            <p className="mt-2 text-4xl font-black text-emerald-600">{stats.approved}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 pb-8">
+        <h2 className="mb-6 text-2xl font-black text-slate-900">My Apartments</h2>
 
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading apartments...</p>
+          <div className="rounded-[28px] bg-white py-16 text-center text-slate-500 shadow-sm">
+            Loading apartments...
           </div>
         ) : apartments.length > 0 ? (
           <div className="space-y-6">
-            {apartments.map((apartment) => (
-              <div
-                key={apartment._id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
-              >
-                <div className="flex flex-col md:flex-row">
-                  {/* Image */}
-                  <div className="md:w-48 h-40 md:h-auto bg-gray-300">
-                    <img
-                      src={apartment.images?.[0] || 'https://via.placeholder.com/200x150'}
-                      alt={apartment.title || apartment.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+            {apartments.map((apartment) => {
+              const occupiedCount = Number(apartment.occupiedCount || 0);
+              const capacity = Number(apartment.capacity ?? apartment.max_people ?? apartment.beds ?? 0);
+              const hasCapacity = capacity > 0;
+              const occupancy = hasCapacity ? Math.min((occupiedCount / capacity) * 100, 100) : 0;
 
-                  {/* Content */}
-                  <div className="flex-1 p-6 flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-xl text-primary mb-2">{apartment.title || apartment.name}</h4>
-                      <p className="text-gray-600 mb-2">
-                        <i className="fas fa-map-marker-alt mr-2 text-primary"></i>
-                        {apartment.city && apartment.district ? `${apartment.district}, ${apartment.city}` : (apartment.location || '')}
-                      </p>
-                      <p className="text-gray-600 mb-4">{apartment.description_en || apartment.description_ar || apartment.description || ''}</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-700">
-                        {apartment.beds && (
-                          <span><i className="fas fa-bed mr-1 text-primary"></i>{apartment.beds} Beds</span>
-                        )}
-                        {apartment.rooms && (
-                          <span><i className="fas fa-door-open mr-1 text-primary"></i>{apartment.rooms} Rooms</span>
-                        )}
-                        {apartment.bathrooms && (
-                          <span><i className="fas fa-bath mr-1 text-primary"></i>{apartment.bathrooms} Bathrooms</span>
-                        )}
-                        {apartment.floor && (
-                          <span><i className="fas fa-layer-group mr-1 text-primary"></i>Floor {apartment.floor}</span>
-                        )}
-                        {apartment.apartmentType && (
-                          <span><i className="fas fa-house-user mr-1 text-primary"></i>{apartment.apartmentType}</span>
-                        )}
-                        {apartment.availability && (
-                          <span><i className="fas fa-key mr-1 text-primary"></i>{apartment.availability}</span>
-                        )}
-                      </div>
-                      {apartment.amenities?.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {apartment.amenities.map((amenity) => (
-                            <span key={amenity} className="px-3 py-1 bg-light text-primary rounded-full text-xs font-semibold">
-                              {amenity}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+              return (
+                <div key={apartment._id} className="overflow-hidden rounded-[28px] bg-white shadow-sm">
+                  <div className="grid gap-0 md:grid-cols-[260px_1fr]">
+                    <div className="h-56 bg-slate-200 md:h-full">
+                      <img
+                        src={apartment.images?.[0] || 'https://via.placeholder.com/400x300'}
+                        alt={apartment.title || apartment.name}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
 
-                    {/* Status & Actions */}
-                    <div className="text-right min-w-[170px]">
-                      <div className="mb-4">
-                        <p className="text-2xl font-bold text-accent">${apartment.price}/mo</p>
-                        <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                          apartment.status === 'approved'
-                            ? 'bg-green-100 text-green-700'
-                            : apartment.status === 'pending_approval'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          {apartment.status}
-                        </span>
-                      </div>
+                    <div className="p-6">
+                      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="max-w-3xl">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-2xl font-black text-slate-900">
+                              {apartment.title || apartment.name}
+                            </h3>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                              apartment.status === 'approved'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : apartment.status === 'pending_approval'
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-rose-100 text-rose-700'
+                            }`}>
+                              {apartment.status}
+                            </span>
+                          </div>
 
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => navigate(`/apartment/${apartment._id}`)}
-                          className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition text-sm"
-                        >
-                          <i className="fas fa-eye mr-2"></i>View
-                        </button>
-                        <button
-                          onClick={() => navigate(`/edit-apartment/${apartment._id}`)}
-                          className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-primary transition text-sm"
-                        >
-                          <i className="fas fa-edit mr-2"></i>Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteApartment(apartment._id)}
-                          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
-                        >
-                          <i className="fas fa-trash mr-2"></i>Delete
-                        </button>
+                          <p className="mt-3 text-slate-500">
+                            <i className="fas fa-location-dot mr-2 text-[#245999]"></i>
+                            {apartment.district}, {apartment.city}
+                          </p>
+                          <p className="mt-3 max-w-2xl text-slate-600">
+                            {apartment.description_en || apartment.description_ar || apartment.description || ''}
+                          </p>
+
+                          <div className="mt-5 grid gap-3 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Capacity</span>
+                              <span className="mt-1 block font-semibold text-slate-900">{hasCapacity ? capacity : 'Not set'}</span>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Occupied</span>
+                              <span className="mt-1 block font-semibold text-slate-900">{occupiedCount}</span>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Requested price</span>
+                              <span className="mt-1 block font-semibold text-slate-900">${apartment.price}/mo</span>
+                            </div>
+                            <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">Availability</span>
+                              <span className="mt-1 block font-semibold text-slate-900">{apartment.availability}</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-5">
+                            <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-400">
+                              <span>Occupancy</span>
+                              <span>{hasCapacity ? `${occupiedCount} / ${capacity}` : 'Capacity not set'}</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                              <div
+                                className={`h-full rounded-full ${occupancy >= 100 ? 'bg-rose-500' : 'bg-[#245999]'}`}
+                                style={{ width: `${occupancy}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="min-w-[180px]">
+                          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Location</p>
+                            <p className="mt-1 font-semibold text-slate-900">{apartment.location}</p>
+                          </div>
+
+                          <div className="mt-4 flex flex-col gap-3">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/apartment/${apartment._id}`)}
+                              className="rounded-2xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-800"
+                            >
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/edit-apartment/${apartment._id}`)}
+                              className="rounded-2xl bg-[#245999] px-4 py-3 font-semibold text-white transition hover:bg-[#1f4f86]"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteApartment(apartment._id)}
+                              className="rounded-2xl bg-rose-600 px-4 py-3 font-semibold text-white transition hover:bg-rose-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <i className="fas fa-building text-6xl text-gray-300 mb-4"></i>
-            <p className="text-gray-600 text-lg mb-4">No apartments yet</p>
+          <div className="rounded-[28px] bg-white py-20 text-center shadow-sm">
+            <i className="fas fa-building text-6xl text-slate-300 mb-5"></i>
+            <h3 className="text-2xl font-bold mb-2 text-slate-900">No apartments yet</h3>
+            <p className="text-slate-500 mb-5">Create your first listing to start receiving bookings.</p>
             <button
+              type="button"
               onClick={() => navigate('/add-apartment')}
-              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition"
+              className="rounded-full bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800"
             >
-              <i className="fas fa-plus mr-2"></i>Add Your First Apartment
+              Add your first apartment
             </button>
           </div>
         )}

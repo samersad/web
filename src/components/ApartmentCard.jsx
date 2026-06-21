@@ -2,79 +2,90 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 export const ApartmentCard = ({ apartment }) => {
-  // Backward-compatible: support both real API fields and mock fields
   const displayName = apartment.title || apartment.name || 'Untitled';
   const displayLocation = apartment.city && apartment.district
     ? `${apartment.district}, ${apartment.city}`
     : apartment.location || apartment.city || '';
-  const displayDescription = apartment.description_en || apartment.description || '';
   const displayImage = apartment.images?.[0] || 'https://via.placeholder.com/300x200';
+  const occupiedCount = Number.isFinite(Number(apartment.occupiedCount)) ? Number(apartment.occupiedCount) : null;
+  const capacityValue = apartment.capacity ?? apartment.max_people ?? null;
+  const capacity = Number.isFinite(Number(capacityValue)) ? Number(capacityValue) : null;
+  const isFull = Boolean(
+    apartment.isFull || (capacity !== null && capacity > 0 && occupiedCount !== null && occupiedCount >= capacity),
+  );
+  const occupancyPercent = capacity !== null && capacity > 0
+    ? Math.min((occupiedCount / capacity) * 100, 100)
+    : 0;
 
   return (
     <Link
       to={`/apartment/${apartment._id}`}
-      className="rounded-lg overflow-hidden shadow-md hover:shadow-xl transition transform hover:scale-105 bg-white"
+      className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
     >
-      {/* Image */}
-      <div className="relative overflow-hidden h-48 bg-gray-300">
+      <div className="relative h-52 overflow-hidden bg-slate-200">
         <img
           src={displayImage}
           alt={displayName}
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover"
         />
-        <div className="absolute top-3 right-3 bg-accent text-white px-3 py-1 rounded-lg text-sm font-semibold">
-          ${apartment.price}/month
+
+        <div className="absolute left-3 top-3 rounded-full bg-slate-950/90 px-3 py-1 text-xs font-semibold text-white">
+          {isFull ? 'Fully booked' : `$${apartment.price}/month`}
         </div>
+
+        {capacity !== null && capacity > 0 && occupiedCount !== null && (
+          <div className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+            {occupiedCount} / {capacity} occupied
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <h3 className="font-bold text-lg text-primary mb-2 line-clamp-2">{displayName}</h3>
-
-        {/* Location */}
-        <div className="flex items-center text-gray-600 text-sm mb-3">
-          <i className="fas fa-map-marker-alt mr-2 text-primary"></i>
-          <span className="line-clamp-1">{displayLocation}</span>
+      <div className="p-5">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="line-clamp-2 text-lg font-black text-slate-900">{displayName}</h3>
+            <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+              <i className="fas fa-map-marker-alt text-[#245999]"></i>
+              <span className="line-clamp-1">{displayLocation}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Features */}
-        <div className="flex justify-between text-sm text-gray-700 mb-3 pb-3 border-b border-gray-200">
-          {apartment.beds && (
-            <div className="flex items-center">
-              <i className="fas fa-bed mr-0.5 text-primary"></i>
+        <div className="flex justify-between gap-4 border-b border-slate-100 pb-4 text-sm text-slate-700">
+          {apartment.beds ? (
+            <div className="flex items-center gap-1.5">
+              <i className="fas fa-bed text-[#245999]"></i>
               <span>{apartment.beds} Beds</span>
             </div>
-          )}
-          {apartment.rooms && (
-            <div className="flex items-center">
-              <i className="fas fa-door-open mr-0.5 text-primary"></i>
+          ) : null}
+          {apartment.rooms ? (
+            <div className="flex items-center gap-1.5">
+              <i className="fas fa-door-open text-[#245999]"></i>
               <span>{apartment.rooms} Rooms</span>
             </div>
-          )}
-          {apartment.bathrooms && (
-            <div className="flex items-center">
-              <i className="fas fa-bath mr-0.5 text-primary"></i>
+          ) : null}
+          {apartment.bathrooms ? (
+            <div className="flex items-center gap-1.5">
+              <i className="fas fa-bath text-[#245999]"></i>
               <span>{apartment.bathrooms} Bath</span>
             </div>
-          )}
-          {apartment.floor && (
-            <div className="flex items-center">
-              <i className="fas fa-layer-group mr-0.5 text-primary"></i>
-              <span>Floor {apartment.floor}</span>
-            </div>
-          )}
+          ) : null}
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <i className="fas fa-star text-yellow-400 mr-1"></i>
-            <span className="font-semibold text-sm">{apartment.rating || apartment.averageRating || '—'}</span>
+        {capacity !== null && capacity > 0 && occupiedCount !== null && (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span>Occupancy</span>
+              <span>{Math.round(occupancyPercent)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full ${isFull ? 'bg-red-500' : 'bg-[#245999]'}`}
+                style={{ width: `${occupancyPercent}%` }}
+              />
+            </div>
           </div>
-          <button className="text-primary hover:text-secondary transition">
-            <i className="fas fa-heart"></i>
-          </button>
-        </div>
+        )}
       </div>
     </Link>
   );
