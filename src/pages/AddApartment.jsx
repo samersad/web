@@ -376,7 +376,7 @@ export const AddApartment = () => {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">Description (English) *</label>
+                <label className="block text-gray-700 font-semibold mb-2">Description</label>
                 <textarea
                   name="description_en"
                   value={formData.description_en}
