@@ -6,6 +6,9 @@ import { Loading } from './components/Loading/Loading';
 // Pages
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { VerifyOTP } from './pages/VerifyOTP';
+import { ResetPassword } from './pages/ResetPassword';
 import { StudentHome } from './pages/StudentHome';
 import { MyApartment } from './pages/MyApartment';
 import { Search } from './pages/Search';
@@ -26,6 +29,9 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/forgot-password/verify" element={<VerifyOTP />} />
+          <Route path="/forgot-password/reset" element={<ResetPassword />} />
 
           {/* Protected Routes */}
           <Route
