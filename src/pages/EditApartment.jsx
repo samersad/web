@@ -28,6 +28,8 @@ export const EditApartment = () => {
     images: [],
   });
   const [preview, setPreview] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
@@ -62,7 +64,7 @@ export const EditApartment = () => {
         availability: apartment.availability || 'available',
         images: [],
       });
-      setPreview(apartment.images || []);
+      setExistingImages(apartment.images || []);
     } catch (error) {
       setError('Failed to load apartment details');
       console.error('Error fetching apartment:', error);
@@ -78,10 +80,7 @@ export const EditApartment = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setFormData(prev => ({ ...prev, images: files }));
-
-    const previews = files.map(file => URL.createObjectURL(file));
-    setPreview(previews);
+    setNewImages((prev) => [...prev, ...files]);
   };
 
   const handleSubmit = async (e) => {
@@ -89,21 +88,34 @@ export const EditApartment = () => {
     setError('');
 
     try {
-      const submitData = {
-        ...formData,
-        price: Number(formData.price),
-        beds: Number(formData.beds),
-        rooms: Number(formData.rooms),
-        bathrooms: formData.bathrooms ? Number(formData.bathrooms) : undefined,
-        floor: formData.floor ? Number(formData.floor) : undefined,
-      };
+      const form = new FormData();
 
-      // Only include images if new ones were selected
-      if (formData.images.length === 0) {
-        delete submitData.images;
-      }
+      form.append("title", formData.title);
+      form.append("description_en", formData.description_en);
+      form.append("description_ar", formData.description_ar);
+      form.append("price", Number(formData.price));
+      form.append("city", formData.city);
+      form.append("district", formData.district);
+      form.append("address", formData.address);
+      form.append("buildingNumber", formData.buildingNumber);
+      form.append("unitNumber", formData.unitNumber);
+      form.append("apartmentType", formData.apartmentType);
+      form.append("beds", Number(formData.beds));
+      form.append("rooms", Number(formData.rooms));
+      form.append("bathrooms", formData.bathrooms ? Number(formData.bathrooms) : "");
+      form.append("floor", formData.floor ? Number(formData.floor) : "");
+      form.append("latitude", formData.latitude);
+      form.append("longitude", formData.longitude);
+      form.append("amenities", formData.amenities);
+      form.append("availability", formData.availability);
 
-      await apartmentsAPI.updateApartment(id, submitData);
+      // new images only
+      newImages.forEach((img) => {
+        form.append("images", img);
+      });
+
+      await apartmentsAPI.updateApartment(id, form);
+      
       setSuccessMessage('Apartment updated successfully!');
       setTimeout(() => {
         navigate('/my-apartment');
@@ -161,54 +173,29 @@ export const EditApartment = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">Apartment Title</label>
+                <label className="block text-gray-700 font-semibold mb-2">Apartment Title *</label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="e.g., Sunny Apartment Near University"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">Apartment Type</label>
-                <select
-                  name="apartmentType"
-                  value={formData.apartmentType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="apartment">Apartment</option>
-                  <option value="studio">Studio</option>
-                  <option value="house">House</option>
-                  <option value="villa">Villa</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Price per Month (EGP)</label>
+                <label className="block text-gray-700 font-semibold mb-2">Price per Month (EGP) *</label>
                 <input
                   type="number"
                   name="price"
                   value={formData.price}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="1000"
                 />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Availability</label>
-                <select
-                  name="availability"
-                  value={formData.availability}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="available">Available</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="rented">Rented</option>
-                </select>
               </div>
             </div>
           </div>
@@ -219,25 +206,35 @@ export const EditApartment = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">City</label>
+                <label className="block text-gray-700 font-semibold mb-2">City *</label>
                 <input
                   type="text"
                   name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  value="Asyut"
+                  onChange={handleChange}                  
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg  bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">District</label>
-                <input
-                  type="text"
+                <label className="block text-gray-700 font-semibold mb-2">
+                  District *
+                </label>
+
+                <select
                   name="district"
                   value={formData.district}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                >
+                  <option value="">Select District</option>
+                  <option value="Feryal">Feryal</option>
+                  <option value="Sayed">Sayed</option>
+                  <option value="Qulta">Qulta</option>
+                  <option value="City">City</option>
+                  <option value="El Gomhoria">El Gomhoria</option>
+                </select>
               </div>
 
               <div>
@@ -248,30 +245,34 @@ export const EditApartment = () => {
                   value={formData.address}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="e.g., Main Street"
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Building No.</label>
-                  <input
-                    type="text"
-                    name="buildingNumber"
-                    value={formData.buildingNumber}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Unit No.</label>
-                  <input
-                    type="text"
-                    name="unitNumber"
-                    value={formData.unitNumber}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
+            {/* Coordinates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Latitude</label>
+                <input
+                  type="text"
+                  name="latitude"
+                  value={formData.latitude}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="30.0444"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Longitude</label>
+                <input
+                  type="text"
+                  name="longitude"
+                  value={formData.longitude}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="31.2357"
+                />
               </div>
             </div>
           </div>
@@ -282,24 +283,28 @@ export const EditApartment = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">Bedrooms</label>
+                <label className="block text-gray-700 font-semibold mb-2">Bedrooms *</label>
                 <input
                   type="number"
                   name="beds"
                   value={formData.beds}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="2"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">Rooms</label>
+                <label className="block text-gray-700 font-semibold mb-2">Rooms *</label>
                 <input
                   type="number"
                   name="rooms"
                   value={formData.rooms}
                   onChange={handleChange}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="3"
                 />
               </div>
 
@@ -311,6 +316,7 @@ export const EditApartment = () => {
                   value={formData.bathrooms}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="1"
                 />
               </div>
 
@@ -322,22 +328,11 @@ export const EditApartment = () => {
                   value={formData.floor}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="3"
                 />
               </div>
             </div>
 
-            <div className="mt-6">
-              <label className="block text-gray-700 font-semibold mb-2">Amenities</label>
-              <input
-                type="text"
-                name="amenities"
-                value={formData.amenities}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="wifi,desk,balcony,ac (comma-separated)"
-              />
-              <p className="text-sm text-gray-500 mt-1">Separate amenities with commas</p>
-            </div>
           </div>
 
           {/* Media */}
@@ -356,21 +351,68 @@ export const EditApartment = () => {
                 />
                 <label htmlFor="images" className="cursor-pointer">
                   <i className="fas fa-cloud-upload-alt text-4xl text-primary mb-4"></i>
-                  <p className="text-gray-700 font-semibold">Click to upload new photos</p>
-                  <p className="text-gray-500 text-sm">Leave empty to keep existing photos</p>
+                  <p className="text-gray-700 font-semibold">Click to upload or drag and drop</p>
+                  <p className="text-gray-500 text-sm">JPG, JPEG, PNG, WebP up to 10MB</p>
                 </label>
               </div>
 
-              {preview.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  {preview.map((img, index) => (
-                    <div key={index} className="relative rounded-lg overflow-hidden h-32 bg-gray-300">
-                      <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+              {/* Existing Images */}
+              {existingImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 mt-6">
+                  {existingImages.map((img, index) => (
+                    <div key={index} className="relative rounded-lg overflow-hidden h-32">
+                      <img src={img} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* Image Previews */}
+              {newImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  {newImages.map((file, index) => {
+                    const url = URL.createObjectURL(file);
+
+                    return (
+                      <div key={index} className="relative group rounded-lg overflow-hidden h-32">
+                        <img src={url} className="w-full h-full object-cover" />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setNewImages(prev => prev.filter((_, i) => i !== index))
+                          }
+                          className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Video Upload */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-primary mb-6">Video</h2>
+
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) =>
+                setFormData({ ...formData, video: e.target.files[0] })
+              }
+            />
+
+            {formData.video && (
+              <video
+                controls
+                className="w-full mt-4 rounded-lg"
+                src={URL.createObjectURL(formData.video)}
+              />
+            )}
           </div>
 
           {/* Description */}
@@ -379,25 +421,15 @@ export const EditApartment = () => {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">Description (English)</label>
+                <label className="block text-gray-700 font-semibold mb-2">Description (English) *</label>
                 <textarea
                   name="description_en"
                   value={formData.description_en}
                   onChange={handleChange}
+                  required
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                ></textarea>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Description (Arabic)</label>
-                <textarea
-                  name="description_ar"
-                  value={formData.description_ar}
-                  onChange={handleChange}
-                  rows="4"
-                  dir="rtl"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Describe your apartment in English..."
                 ></textarea>
               </div>
             </div>
@@ -414,9 +446,10 @@ export const EditApartment = () => {
             </button>
             <button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:shadow-lg transition"
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 rounded-lg hover:shadow-lg transition disabled:opacity-50"
             >
-              Update Apartment
+              {loading ? 'Editing Apartment...' : 'Edit Apartment'}
             </button>
           </div>
         </form>
