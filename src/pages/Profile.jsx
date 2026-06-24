@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { usersAPI } from '../services/api';
 
 export const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
     email: user?.email || '',
@@ -74,6 +77,26 @@ export const Profile = () => {
       setMessage(error?.message || error.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const password = window.prompt("To delete your account forever, please enter your password for confirmation:");
+
+    if (password === null) return; // User cancelled
+    if (!password.trim()) {
+      alert("Password is required to delete your account.");
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      await usersAPI.deleteProfile(password);
+      // Force a hard reload to the login page to ensure all memory state is wiped
+      window.location.assign('/login');
+    } catch (error) {
+      setMessage(error?.message || error.response?.data?.message || 'Failed to delete account. Please check your password.');
+      setDeleteLoading(false);
     }
   };
 
@@ -153,21 +176,41 @@ return (
             </p>
 
             {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="
-                mt-6
-                w-full
-                bg-black
-                text-white
-                py-3
-                rounded-xl
-                hover:opacity-90
-                duration-300"
-              >
-                <i className="fas fa-edit mr-2"></i>
-                Edit Profile
-              </button>
+              <div className="w-full space-y-3 mt-6">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="
+                  w-full
+                  bg-black
+                  text-white
+                  py-3
+                  rounded-xl
+                  hover:opacity-90
+                  duration-300"
+                >
+                  <i className="fas fa-edit mr-2"></i>
+                  Edit Profile
+                </button>
+
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
+                  className="
+                  w-full
+                  bg-red-50
+                  text-red-600
+                  py-3
+                  rounded-xl
+                  hover:bg-red-100
+                  transition-colors
+                  duration-300
+                  font-semibold
+                  text-sm"
+                >
+                  <i className="fas fa-trash-alt mr-2"></i>
+                  {deleteLoading ? 'Deleting...' : 'Delete Account'}
+                </button>
+              </div>
             )}
 
           </div>

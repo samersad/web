@@ -217,7 +217,10 @@ apiClient.interceptors.response.use(
     const requestUrl = error?.config?.url || '';
     const isAuthRoute = authPaths.some((route) => requestUrl.includes(route));
 
-    if (status === 401 && !isAuthRoute) {
+    // Redirect to login on 401 (Unauthorized) OR 404 (Not Found) for main auth/user routes
+    if ((status === 401 || status === 404) && !isAuthRoute && (requestUrl.includes('/auth/me') || requestUrl.includes('/users/me'))) {
+      redirectToLogin();
+    } else if (status === 401 && !isAuthRoute) {
       redirectToLogin();
     }
 

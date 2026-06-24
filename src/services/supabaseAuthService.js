@@ -23,10 +23,10 @@ const deriveBackendPassword = async (session) => {
 
 const getGoogleRoleHint = () => {
   if (typeof window === 'undefined') {
-    return 'client';
+    return null;
   }
 
-  return window.sessionStorage.getItem(GOOGLE_ROLE_HINT_KEY) || 'client';
+  return window.sessionStorage.getItem(GOOGLE_ROLE_HINT_KEY) || null;
 };
 
 export const setGoogleRoleHint = (role) => {
@@ -53,7 +53,7 @@ export const clearGoogleRoleHint = () => {
 const buildRegisterPayload = async (session) => {
   const user = session?.user || {};
   const metadata = user.user_metadata || {};
-  const role = normalizeRoleForApi(getGoogleRoleHint() || metadata.role || 'client') || 'client';
+  const role = normalizeRoleForApi(getGoogleRoleHint() || metadata.role || '');
   const password = await deriveBackendPassword(session);
 
   return {
@@ -63,7 +63,7 @@ const buildRegisterPayload = async (session) => {
     college: toSafeString(metadata.college),
     phoneNumber: toSafeString(metadata.phone || metadata.phone_number),
     gender: toSafeString(metadata.gender),
-    role,
+    role: role || undefined, // Send undefined if no role, so backend might handle it or we handle it on return
     photoUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
   };
 };
@@ -82,22 +82,27 @@ export const syncSupabaseSessionToBackend = async (session, { force = false } = 
   const payload = await buildRegisterPayload(session);
 
   try {
-    const response = await authAPI.register(payload);
-    setStoredUser(response.data?.user || response.data || null);
+    // Try to login first
+    const loginResponse = await authAPI.login({
+      email: payload.email,
+      password: payload.password,
+    });
+    setStoredUser(loginResponse.data?.user || loginResponse.data || null);
     clearGoogleRoleHint();
-    return response;
-  } catch (registerError) {
+    return loginResponse;
+  } catch (loginError) {
     try {
-      const response = await authAPI.login({
-        email: payload.email,
-        password: payload.password,
-      });
-      setStoredUser(response.data?.user || response.data || null);
+      // If login fails, try to register
+      const registerResponse = await authAPI.register(payload);
+      setStoredUser(registerResponse.data?.user || registerResponse.data || null);
       clearGoogleRoleHint();
-      return response;
-    } catch (loginError) {
-      loginError.cause = registerError;
-      throw loginError;
+      return registerResponse;
+    } catch (registerError) {
+      // If BOTH fail, it means the email exists with a DIFFERENT password (likely phone registration)
+      if (registerError.message.includes('already registered') || registerError.message.includes('409')) {
+        throw new Error('This email is already registered with a manual password. Please log in with your email and password first to link your account.');
+      }
+      throw registerError;
     }
   }
 };

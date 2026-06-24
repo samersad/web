@@ -180,15 +180,25 @@ export const updateCurrentUser = async (userId, data = {}) => {
   return { data: user };
 };
 
+export const deleteCurrentUser = async (password) => {
+  // Pass the password to the backend for verification if provided
+  const config = password ? { data: { password } } : {};
+  const response = await apiClient.delete('/users/me', config);
+  clearStoredSession();
+  return response.data;
+};
+
 export const usersAPI = {
   getMe: getCurrentUser,
   getUsers,
   getUserById,
   updateUser: updateCurrentUser,
+  deleteUser: deleteCurrentUser,
   updateProfile: async (data = {}) => {
     const currentUser = getStoredUser();
     return updateCurrentUser(currentUser?.id || currentUser?._id, data);
   },
+  deleteProfile: async (password) => deleteCurrentUser(password),
   uploadProfileImage: async (file, userId) => uploadImage(file, userId || getStoredUser()?.id || 'profile'),
   clearStoredSession,
   setStoredUser,

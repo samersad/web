@@ -76,7 +76,11 @@ export const AuthProvider = ({ children }) => {
           const { data } = await supabase.auth.getSession();
           const session = data?.session || null;
           if (session) {
-            await syncSupabaseSessionToBackend(session, { force: true });
+            try {
+              await syncSupabaseSessionToBackend(session, { force: true });
+            } catch (syncErr) {
+              console.error('Initial sync failed:', syncErr);
+            }
           }
 
           keepAliveId = window.setInterval(() => {

@@ -7,8 +7,13 @@ export const AuthCallback = () => {
   const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate('/home', { replace: true });
+    if (!loading) {
+      if (isAuthenticated) {
+        navigate('/home', { replace: true });
+      } else {
+        // If not authenticated after callback, go to login
+        navigate('/login', { replace: true });
+      }
     }
   }, [isAuthenticated, loading, navigate]);
 
