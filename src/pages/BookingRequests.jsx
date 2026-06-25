@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { bookingsAPI } from '../services/api';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { APARTMENT_PLACEHOLDER } from '../utils/placeholders';
 
 const statusStyles = {
   pending: 'bg-amber-100 text-amber-700',
@@ -49,8 +50,14 @@ export const BookingRequests = () => {
       } else if (action === 'declined') {
         await bookingsAPI.rejectBooking(id);
       }
+
+      // Refresh the list immediately to reflect status & capacity updates
+      const response = await bookingsAPI.getOwnerBookings();
+      const data = response.data;
+      setBookings(Array.isArray(data) ? data : (data?.bookings || []));
     } catch (error) {
       console.error('Error updating booking request:', error);
+      alert(error?.response?.data?.message || error?.message || 'Failed to update booking status');
     }
   };
 
@@ -118,7 +125,7 @@ export const BookingRequests = () => {
                   <div className="grid gap-0 md:grid-cols-[260px_1fr]">
                     <div className="h-56 bg-slate-200 md:h-full">
                       <img
-                        src={booking.apartment?.images?.[0] || 'https://via.placeholder.com/400x300'}
+                        src={booking.apartment?.images?.[0] || APARTMENT_PLACEHOLDER}
                         alt={booking.apartment?.title || booking.apartment?.name}
                         className="h-full w-full object-cover"
                       />

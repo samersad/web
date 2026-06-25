@@ -21,8 +21,8 @@ export const ProtectedRoute = ({ children, requiredRole, allowUnauthenticated = 
     return children;
   }
 
-  // Google Sign-In redirect check: User has logged in but has no role yet
-  if (!user.role) {
+  // Google Sign-In redirect check: User has logged in but has an incomplete profile
+  if (!user.role || !user.gender) {
     return <Navigate to="/role-selection" replace />;
   }
 

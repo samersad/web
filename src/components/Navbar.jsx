@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
+import { AVATAR_SM_PLACEHOLDER } from '../utils/placeholders';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -75,7 +75,7 @@ export const Navbar = () => {
                 className="flex items-center space-x-2 text-gray-700 hover:text-primary transition"
               >
                 <img
-                  src={user?.avatar || 'https://via.placeholder.com/32'}
+                  src={user?.avatar || AVATAR_SM_PLACEHOLDER}
                   alt="Profile"
                   className="w-8 h-8 rounded-full"
                 />

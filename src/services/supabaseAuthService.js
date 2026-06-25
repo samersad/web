@@ -1,5 +1,5 @@
 import { authAPI } from './authService';
-import { getStoredAccessToken, getStoredUser, setStoredUser } from './apiClient';
+import { clearStoredSession, getStoredAccessToken, getStoredUser, setStoredUser } from './apiClient';
 import { normalizeRoleForApi } from './userService';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 
@@ -53,7 +53,7 @@ export const clearGoogleRoleHint = () => {
 const buildRegisterPayload = async (session) => {
   const user = session?.user || {};
   const metadata = user.user_metadata || {};
-  const role = normalizeRoleForApi(getGoogleRoleHint() || metadata.role || '');
+  const role = normalizeRoleForApi(getGoogleRoleHint() || metadata.role || 'client');
   const password = await deriveBackendPassword(session);
 
   return {
@@ -98,9 +98,34 @@ export const syncSupabaseSessionToBackend = async (session, { force = false } = 
       clearGoogleRoleHint();
       return registerResponse;
     } catch (registerError) {
-      // If BOTH fail, it means the email exists with a DIFFERENT password (likely phone registration)
-      if (registerError.message.includes('already registered') || registerError.message.includes('409')) {
-        throw new Error('This email is already registered with a manual password. Please log in with your email and password first to link your account.');
+      // If BOTH fail, the email exists in the backend with a DIFFERENT password.
+      // This happens when:
+      //   - User registered manually with this email, then tried Google with the same email
+      //   - Supabase user was deleted/re-created, changing the derived password
+      //
+      // authAPI wraps errors as: new Error(message, { cause: axiosError })
+      // So we check status codes from the cause, or directly from the response if present.
+      const registerStatus = registerError?.cause?.response?.status || registerError?.response?.status;
+      const loginStatus = loginError?.cause?.response?.status || loginError?.response?.status;
+      const msg = `${registerError.message || ''} ${loginError.message || ''}`;
+      const isConflict =
+        registerStatus === 409 ||
+        loginStatus === 409 ||
+        msg.includes('Already exists') ||
+        msg.includes('already registered') ||
+        msg.includes('Conflict') ||
+        msg.includes('409');
+
+      if (isConflict) {
+        clearGoogleRoleHint();
+        clearStoredSession();
+        try {
+          if (supabase) await supabase.auth.signOut();
+        } catch (_) {
+          // Ignore sign-out errors — local cleanup already done above
+        }
+        // Return null instead of throwing so callers don't get an unhandled error
+        return null;
       }
       throw registerError;
     }

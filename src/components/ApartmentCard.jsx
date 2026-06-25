@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { APARTMENT_PLACEHOLDER } from '../utils/placeholders';
 
 export const ApartmentCard = ({ apartment }) => {
   const displayName = apartment.title || apartment.name || 'Untitled';
   const displayLocation = apartment.city && apartment.district
     ? `${apartment.district}, ${apartment.city}`
     : apartment.location || apartment.city || '';
-  const displayImage = apartment.images?.[0] || 'https://via.placeholder.com/300x200';
+  const displayImage = apartment.images?.[0] || APARTMENT_PLACEHOLDER;
   const occupiedCount = Number.isFinite(Number(apartment.occupiedCount)) ? Number(apartment.occupiedCount) : null;
   const capacityValue = apartment.capacity ?? apartment.max_people ?? null;
   const capacity = Number.isFinite(Number(capacityValue)) ? Number(capacityValue) : null;

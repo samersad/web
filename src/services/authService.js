@@ -40,8 +40,11 @@ const normalizeRegisterPayload = (payload = {}) => {
     college: role === 'client' ? (payload.college || '').trim() : '',
     phoneNumber: payload.phoneNumber?.trim() || payload.phone?.trim() || '',
     gender: payload.gender || '',
-    role,
   };
+
+  if (role) {
+    body.role = role;
+  }
 
   if ('photoUrl' in payload) {
     body.photoUrl = payload.photoUrl || null;

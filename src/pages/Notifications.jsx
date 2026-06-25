@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { notificationsAPI } from '../services/api';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { APARTMENT_PLACEHOLDER } from '../utils/placeholders';
 
 const notificationMeta = {
   booking_request: { icon: 'fa-calendar-plus', label: 'Booking request', color: 'text-amber-600' },
@@ -160,7 +161,7 @@ export const Notifications = () => {
 
                     {notification.relatedApartment && (
                       <img
-                        src={notification.relatedApartment.images?.[0] || 'https://via.placeholder.com/96'}
+                        src={notification.relatedApartment.images?.[0] || APARTMENT_PLACEHOLDER}
                         alt={notification.relatedApartment.title || notification.relatedApartment.name}
                         className="hidden h-24 w-24 rounded-2xl object-cover md:block"
                       />

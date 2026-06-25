@@ -4,6 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { apartmentsAPI, bookingsAPI, chatAPI, reviewsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { AVATAR_SM_PLACEHOLDER } from '../utils/placeholders';
 
 export const ApartmentDetails = () => {
   const { id } = useParams();
@@ -25,6 +26,7 @@ export const ApartmentDetails = () => {
   });
   const [reviews, setReviews] = useState([]);
   const [isEligible, setIsEligible] = useState(false);
+  const [hasRented, setHasRented] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5 });
   const [submittingReview, setSubmittingReview] = useState(false);
 
@@ -47,15 +49,30 @@ export const ApartmentDetails = () => {
   const checkEligibility = async () => {
     if (!user) {
       setIsEligible(false);
+      setHasRented(false);
       return;
     }
     try {
       const res = await bookingsAPI.getMyBookings();
       const bookings = res.data?.bookings || [];
-      const hasApprovedBooking = bookings.some(
-        (b) => `${b.apartmentId}` === `${id}` && ['approved', 'accepted', 'confirmed', 'completed'].includes(b.status)
+      
+      const bookingsForThisApartment = bookings.filter(
+        (b) => {
+          const aptId = b.apartmentId || b.apartment?._id || b.apartment;
+          return aptId && `${aptId}` === `${id}`;
+        }
       );
+
+      const hasApprovedBooking = bookingsForThisApartment.some(
+        (b) => ['approved', 'accepted', 'confirmed', 'completed'].includes(b.status)
+      );
+
+      const hasAnyActiveBooking = bookingsForThisApartment.some(
+        (b) => ['pending', 'approved', 'accepted', 'confirmed', 'completed'].includes(b.status)
+      );
+
       setIsEligible(hasApprovedBooking);
+      setHasRented(hasAnyActiveBooking);
     } catch (err) {
       console.error('Error checking eligibility:', err);
     }
@@ -143,6 +160,18 @@ export const ApartmentDetails = () => {
       const response = await chatAPI.getOrCreateConversation({
         participantIds: [user._id, apartment.owner._id],
         apartmentId: apartment._id,
+        participants: [
+          {
+            _id: user._id,
+            fullName: user.fullName || user.name || '',
+            photoUrl: user.photoUrl || user.avatar || '',
+          },
+          {
+            _id: apartment.owner._id,
+            fullName: apartment.owner.fullName || apartment.owner.name || apartment.ownerName || '',
+            photoUrl: apartment.owner.photoUrl || apartment.owner.avatar || apartment.ownerPhotoUrl || '',
+          },
+        ],
       });
       const conversation = response.data?.conversation || response.data;
 
@@ -420,7 +449,7 @@ export const ApartmentDetails = () => {
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-center gap-4">
                     <img
-                      src={apartment.owner.avatar || 'https://via.placeholder.com/80'}
+                      src={apartment.owner.avatar || AVATAR_SM_PLACEHOLDER}
                       alt={apartment.owner.fullName}
                       className="h-16 w-16 rounded-2xl object-cover"
                     />
@@ -488,11 +517,18 @@ export const ApartmentDetails = () => {
               {user?.role === 'student' && (
                 <button
                   type="button"
-                  onClick={() => (isFull ? null : setIsBookingModalOpen(true))}
-                  disabled={isFull}
+                  onClick={() => {
+                    if (hasRented) {
+                      alert('You have already rented/booked this apartment!');
+                      return;
+                    }
+                    if (isFull) return;
+                    setIsBookingModalOpen(true);
+                  }}
+                  disabled={isFull || hasRented}
                   className="flex-1 rounded-2xl bg-[#245999] py-4 text-center text-lg font-black text-white transition hover:bg-[#1f4f86] disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
-                  {isFull ? 'Apartment is full' : 'Rent now'}
+                  {hasRented ? 'You already rented this' : isFull ? 'Apartment is full' : 'Rent now'}
                 </button>
               )}
 
@@ -558,7 +594,7 @@ export const ApartmentDetails = () => {
                 <div key={review._id || review.id} className="border-b border-slate-100 pb-6 last:border-0 last:pb-0">
                   <div className="flex items-start gap-4">
                     <img
-                      src={review.userAvatar || 'https://via.placeholder.com/48'}
+                      src={review.userAvatar || AVATAR_SM_PLACEHOLDER}
                       alt={review.userName}
                       className="h-12 w-12 rounded-full object-cover shadow-sm"
                     />

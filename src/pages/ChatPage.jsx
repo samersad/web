@@ -4,6 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { chatAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { AVATAR_SM_PLACEHOLDER } from '../utils/placeholders';
 
 export const ChatPage = () => {
   const { conversationId } = useParams();
@@ -114,7 +115,7 @@ export const ChatPage = () => {
 
               <div className="h-12 w-12 overflow-hidden rounded-2xl bg-slate-100">
                 <img
-                  src={otherParticipant?.avatar || 'https://via.placeholder.com/48'}
+                  src={otherParticipant?.avatar || AVATAR_SM_PLACEHOLDER}
                   alt={otherParticipant?.fullName || 'Participant'}
                   className="h-full w-full object-cover"
                 />
@@ -172,7 +173,7 @@ export const ChatPage = () => {
               <div className="space-y-4">
                 {messageList.map((message) => {
                   const isMe = message.senderId === user?._id;
-                  const senderAvatar = message.sender?.avatar || message.sender?.photoUrl || otherParticipant?.avatar || 'https://via.placeholder.com/40';
+                  const senderAvatar = message.sender?.avatar || message.sender?.photoUrl || otherParticipant?.avatar || AVATAR_SM_PLACEHOLDER;
                   const hasOnlyImages = !message.text && message.images?.length > 0;
 
                   return (

@@ -180,7 +180,9 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     register,
-    loginWithGoogle: () => beginGoogleOAuth('client'),
+    // Don't pre-assign a role for Google login — new users will be redirected to /role-selection
+    // by ProtectedRoute when their backend user has no role set yet.
+    loginWithGoogle: () => beginGoogleOAuth(null),
     registerWithGoogle: (role) => beginGoogleOAuth(role || 'client'),
     logout,
     fetchUser,

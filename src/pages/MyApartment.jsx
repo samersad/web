@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { apartmentsAPI } from '../services/api';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { APARTMENT_PLACEHOLDER } from '../utils/placeholders';
 
 export const MyApartment = () => {
   const navigate = useNavigate();
@@ -114,7 +115,7 @@ export const MyApartment = () => {
                   <div className="grid gap-0 md:grid-cols-[260px_1fr]">
                     <div className="h-56 bg-slate-200 md:h-full">
                       <img
-                        src={apartment.images?.[0] || 'https://via.placeholder.com/400x300'}
+                        src={apartment.images?.[0] || APARTMENT_PLACEHOLDER}
                         alt={apartment.title || apartment.name}
                         className="h-full w-full object-cover"
                       />

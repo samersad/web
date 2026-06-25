@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { usersAPI } from '../services/api';
+import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 export const Profile = () => {
   const { user, setUser, logout } = useAuth();
@@ -10,6 +11,9 @@ export const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
     email: user?.email || '',
@@ -19,7 +23,10 @@ export const Profile = () => {
     faculty: user?.faculty || '',
     preferredLanguage: user?.preferredLanguage || 'en',
   });
-  const [preview, setPreview] = useState(user?.avatar || 'https://via.placeholder.com/200');
+  const [preview, setPreview] = useState(
+    user?.avatar ||
+    'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23e2e8f0%22/%3E%3Ccircle cx=%22100%22 cy=%2280%22 r=%2240%22 fill=%22%2394a3b8%22/%3E%3Cellipse cx=%22100%22 cy=%22175%22 rx=%2260%22 ry=%2240%22 fill=%22%2394a3b8%22/%3E%3C/svg%3E'
+  );
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -32,7 +39,10 @@ export const Profile = () => {
         gender: user.gender || '',
         faculty: user.faculty || '',
       });
-      setPreview(user.avatar || 'https://via.placeholder.com/200');
+      setPreview(
+        user.avatar ||
+        'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23e2e8f0%22/%3E%3Ccircle cx=%22100%22 cy=%2280%22 r=%2240%22 fill=%22%2394a3b8%22/%3E%3Cellipse cx=%22100%22 cy=%22175%22 rx=%2260%22 ry=%2240%22 fill=%22%2394a3b8%22/%3E%3C/svg%3E'
+      );
     }
   }, [user]);
 
@@ -80,22 +90,28 @@ export const Profile = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const password = window.prompt("To delete your account forever, please enter your password for confirmation:");
+  const handleDeleteAccountSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setDeleteError('');
 
-    if (password === null) return; // User cancelled
-    if (!password.trim()) {
-      alert("Password is required to delete your account.");
+    if (!deletePassword.trim()) {
+      setDeleteError('Password is required to delete your account.');
       return;
     }
 
     setDeleteLoading(true);
     try {
-      await usersAPI.deleteProfile(password);
-      // Force a hard reload to the login page to ensure all memory state is wiped
+      await usersAPI.deleteProfile(deletePassword);
+      // Sign out from Supabase so the OAuth session is fully cleared.
+      // Without this the next Google login would try to restore the deleted account,
+      // causing 401 (wrong password) + 409 (email already exists) errors.
+      if (isSupabaseConfigured && supabase) {
+        await supabase.auth.signOut();
+      }
+      // Hard reload to login page to wipe all in-memory state
       window.location.assign('/login');
     } catch (error) {
-      setMessage(error?.message || error.response?.data?.message || 'Failed to delete account. Please check your password.');
+      setDeleteError(error?.message || error.response?.data?.message || 'Failed to delete account. Please check your password.');
       setDeleteLoading(false);
     }
   };
@@ -193,7 +209,11 @@ return (
                 </button>
 
                 <button
-                  onClick={handleDeleteAccount}
+                  onClick={() => {
+                    setDeletePassword('');
+                    setDeleteError('');
+                    setIsDeleteModalOpen(true);
+                  }}
                   disabled={deleteLoading}
                   className="
                   w-full
@@ -437,9 +457,61 @@ return (
 
         </div>
 
-      </div>
-
     </div>
+
+    {isDeleteModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
+        <div className="relative w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl md:p-8">
+          <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Account Forever</h3>
+          <p className="text-sm text-slate-500 mb-6">
+            This action cannot be undone. To delete your account forever, please enter your password for confirmation:
+          </p>
+
+          {deleteError && (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              {deleteError}
+            </div>
+          )}
+
+          <form onSubmit={handleDeleteAccountSubmit} className="space-y-4">
+            <input
+              type="password"
+              placeholder="Enter password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              required
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+
+            <div className="flex gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={deleteLoading}
+                className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={deleteLoading}
+                className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Deleting...
+                  </span>
+                ) : (
+                  'Confirm Delete'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+  </div>
   </div>
 );
 };

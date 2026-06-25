@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { chatAPI } from '../services/api';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { AVATAR_SM_PLACEHOLDER } from '../utils/placeholders';
 
 export const Messages = () => {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ export const Messages = () => {
                 <div className="flex items-center gap-4">
                   <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100">
                     <img
-                      src={conversation.otherParticipant?.avatar || 'https://via.placeholder.com/80'}
+                      src={conversation.otherParticipant?.avatar || AVATAR_SM_PLACEHOLDER}
                       alt={conversation.otherParticipant?.fullName || 'Participant'}
                       className="h-full w-full object-cover"
                     />

@@ -243,7 +243,8 @@ export const chatAPI = {
     };
   },
 
-  getOrCreateConversation: async ({ participantIds = [], apartmentId } = {}) => {
+  getOrCreateConversation: async ({ participantIds = [], apartmentId, participants = [] } = {}) => {
+    // 1. Check if a conversation already exists between these two users
     const response = await chatAPI.getChats();
     const chats = response.data?.chats || response.data?.conversations || [];
     const existingChat = findExistingChat(chats, participantIds);
@@ -252,11 +253,28 @@ export const chatAPI = {
       return { data: { conversation: existingChat } };
     }
 
+    // 2. Build displayNames / displayPhotos from provided participant metadata
+    const displayNames = {};
+    const displayPhotos = {};
+    participants.forEach((p) => {
+      const pid = `${p?._id || p?.id || ''}`;
+      if (pid) {
+        displayNames[pid] = p?.fullName || p?.name || '';
+        displayPhotos[pid] = p?.photoUrl || p?.avatar || '';
+      }
+    });
+
+    // 3. Generate a deterministic chat ID: sorted participant IDs joined by '_'
+    const chatId = [...participantIds].map((id) => `${id}`).sort().join('_');
+
     const createResponse = await apiClient.post('/chats', {
+      id: chatId,
       users: participantIds,
-      apartmentId,
-      displayNames: {},
-      displayPhotos: {},
+      apartmentId: apartmentId || undefined,
+      displayNames,
+      displayPhotos,
+      lastMessage: '',
+      timestamp: new Date().toISOString(),
     });
 
     emitStoreChange();

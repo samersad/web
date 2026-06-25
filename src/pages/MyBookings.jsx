@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { bookingsAPI } from '../services/api';
 import { useStoreVersion } from '../hooks/useStoreVersion';
+import { APARTMENT_PLACEHOLDER } from '../utils/placeholders';
 
 const statusStyles = {
   pending: 'bg-amber-100 text-amber-700',
@@ -119,7 +120,7 @@ export const MyBookings = () => {
                   <div className="grid gap-0 md:grid-cols-[220px_1fr]">
                     <div className="h-56 bg-slate-200 md:h-full">
                       <img
-                        src={booking.apartment?.images?.[0] || 'https://via.placeholder.com/400x300'}
+                        src={booking.apartment?.images?.[0] || APARTMENT_PLACEHOLDER}
                         alt={booking.apartment?.title || booking.apartment?.name}
                         className="h-full w-full object-cover"
                       />

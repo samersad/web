@@ -4,18 +4,23 @@ import { useAuth } from '../context/AuthContext';
 
 export const AuthCallback = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading) {
       if (isAuthenticated) {
-        navigate('/home', { replace: true });
+        // Google users with incomplete profile (no role or no gender) -> send to role selection
+        if (!user?.role || !user?.gender) {
+          navigate('/role-selection', { replace: true });
+        } else {
+          navigate('/home', { replace: true });
+        }
       } else {
         // If not authenticated after callback, go to login
         navigate('/login', { replace: true });
       }
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, user, loading, navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f6f7fb] px-4">
@@ -27,3 +32,4 @@ export const AuthCallback = () => {
     </div>
   );
 };
+
